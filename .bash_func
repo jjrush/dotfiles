@@ -1,0 +1,65 @@
+#!/bin/bash
+
+zeek_run() {
+    # Usage function
+    usage() {
+        echo "Usage: zeek_run <pcap_file>"
+        echo "Runs zeek with Spicy print enabled on a pcap file"
+        echo
+        echo "Arguments:"
+        echo "  pcap_file      Path to pcap file (required)"
+    }
+
+    # Check if help is requested
+    if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+        usage
+        return 0
+    fi
+
+    # Check for required pcap file argument
+    if [[ -z "$1" ]]; then
+        echo "Error: PCAP file argument is required"
+        usage
+        return 1
+    fi
+
+    # Validate pcap file exists and is readable
+    if [[ ! -f "$1" ]] || [[ ! -r "$1" ]]; then
+        echo "Error: PCAP file '$1' does not exist or is not readable"
+        return 1
+    fi
+
+    # Validate file extension
+    if [[ ! "$1" =~ \.(pcap|pcapng|cap)$ ]]; then
+        echo "Warning: File '$1' does not have a standard pcap extension"
+        read -p "Continue anyway? (y/N) " response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+    fi
+
+    local cmake='cmake .'
+    eval "$cmake"
+    local make='make'
+    eval "$make"
+    if [[ $? -eq 0 ]]; then
+        eval "clear"
+        echo "Make successful"
+    else
+        return 0
+    fi
+
+    local cmd="zeek Spicy::enable_print=T -Cr $1"
+    local hlto=$(ls | grep "hlto")
+    local zeek=$(fd "__load__.zeek")
+
+    cmd+=" ${hlto}"
+    cmd+=" ${zeek}"
+
+    # Print command being executed
+    echo "Executing: $cmd"
+
+    # Execute the command
+    eval "$cmd"
+    return $?
+}
