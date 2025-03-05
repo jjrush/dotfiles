@@ -19,6 +19,10 @@ if [[ -f ~/.bash_func ]]; then
     source ~/.bash_func
 fi
 
+if [[ -f ~/.docker-aliases ]]; then
+    source ~/.docker-aliases
+fi
+
 # fix docker
 export DOCKER_HOST=unix:///var/run/docker.sock
 
@@ -30,6 +34,7 @@ HISTCONTROL=ignoreboth
 
 # append to the history file, don't overwrite it
 shopt -s histappend
+export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
 HISTSIZE=1000
@@ -132,9 +137,13 @@ if ! shopt -oq posix; then
   fi
 fi
 
-
 # appending zeek to path
 export PATH=/opt/zeek/bin:$PATH
 
 # add zeek plugins to path
-export ZEEK_PLUGIN_PATH=~/work-parsers/icsnpp-opcua-binary/build/
+export ZEEK_PLUGIN_PATH=~/work-parsers/rocplus/
+# export ZEEK_PLUGIN_PATH=~/work-parsers/rocplus-parsitects/
+# export ZEEK_PLUGIN_PATH=~/work-test/omron-fins
+
+export ZEEK_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/zeek
+export MAXMIND_GEOIP_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/mmdb

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+cursor_run() {
+    { output=$(~/Apps/cursor/cursor.AppImage $1) & } > /dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+        echo "Cursor starting..."
+    else
+        echo "Cursor failed to start"
+    fi
+}
+
 zeek_run() {
     # Usage function
     usage() {

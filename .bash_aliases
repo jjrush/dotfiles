@@ -23,6 +23,9 @@ alias fd='fdfind'
 alias ctl='systemctl'
 alias python='python3'
 alias tidy='make clang-tidy'
+alias fast='make -j$(nproc)'
+alias fastclean='make clean && fast'
+alias ja='ninja -j$(nproc)'
 ##################################
 ##################################
 
@@ -52,12 +55,14 @@ alias gs='git status'
 alias gd='git diff'
 alias gad='git add -A'
 alias gcm='git commit -m'
+alias gb='git branch'
 ##################################
 ##################################
 
 # code aliases ###################
-alias c='code'
+alias c='cursor'
 alias scode='sudo code --no-sandbox --user-data-dir="~/.vscode-root"' # run vscode as sudo
+alias cursor='cursor_run'
 alias cbash='c ~/.bashrc'
 alias clias='c ~/.bash_aliases'
 alias cfunc='c ~/.bash_func'
@@ -68,16 +73,30 @@ alias cfunc='c ~/.bash_func'
 alias malc='cd ~/work-malcolm'
 alias malcolm='malc'
 alias mal='malc'
-
 alias ics='cd ~/work-icsnpp'
 
 alias parse='cd ~/work-parsers'
 alias parsers='parse'
 alias par='parse'
-alias opcua='$(parse) && cd icsnpp-opcua-binary'
+alias roc='parse && cd rocplus'
+alias opcua='parse && cd icsnpp-opcua-binary'
 
 ##################################
 ##################################
 
 # zeek aliases ###################
 alias zr='zeek_run'
+
+##################################
+##################################
+
+# docker aliases #################
+source ~/.docker-aliases
+alias dalias='cat ~/.docker-aliases'
+alias cdlias='c ~/.docker-aliases'
+
+##################################
+##################################
+
+# misc aliases ##################
+alias check='bash ~/tools/check-env.sh' # check docker env files to prevent database pw mismatches
