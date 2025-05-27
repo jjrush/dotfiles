@@ -53,9 +53,10 @@ alias clone='git clone'
 alias pull='git pull'
 alias gs='git status'
 alias gd='git diff'
-alias gad='git add -A'
-alias gcm='git commit -m'
 alias gb='git branch'
+alias gad='git add -u'
+alias gaa='git add -A'
+alias gcm='git commit -m'
 ##################################
 ##################################
 

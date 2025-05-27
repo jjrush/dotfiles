@@ -32,9 +32,15 @@ export DOCKER_HOST=unix:///var/run/docker.sock
 # See bash(1) for more options
 HISTCONTROL=ignoreboth
 
-# append to the history file, don't overwrite it
-shopt -s histappend
-export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+# Set up PROMPT_COMMAND safely
+PROMPT_COMMAND_PARTS="history -a; history -c; history -r"
+
+if type __vte_prompt_command &>/dev/null; then
+    PROMPT_COMMAND="__vte_prompt_command; $PROMPT_COMMAND_PARTS"
+else
+    PROMPT_COMMAND="$PROMPT_COMMAND_PARTS"
+fi
+export PROMPT_COMMAND
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
 HISTSIZE=1000
@@ -139,11 +145,34 @@ fi
 
 # appending zeek to path
 export PATH=/opt/zeek/bin:$PATH
+# adding golang to the path
+export PATH=$PATH:/usr/local/go/bin
 
 # add zeek plugins to path
-export ZEEK_PLUGIN_PATH=~/work-parsers/rocplus/
-# export ZEEK_PLUGIN_PATH=~/work-parsers/rocplus-parsitects/
-# export ZEEK_PLUGIN_PATH=~/work-test/omron-fins
+# Function to add ICSNPP plugins to ZEEK_PLUGIN_PATH
+add_icsnpp_plugins() {
+    local base_dir="/home/rush/work-parsers"
+    if [ ! -d "$base_dir" ]; then
+        echo "Warning: $base_dir directory not found"
+        return 1
+    fi
+
+    # Loop through each directory in /work-parsers
+    for dir in "$base_dir"/*/; do
+        if [ -d "$dir" ]; then
+            # Check if it's an ICSNPP plugin by looking for analyzer and scripts directories
+            if [ -d "${dir}analyzer" ] && [ -d "${dir}scripts" ]; then
+                # Remove trailing slash and add to ZEEK_PLUGIN_PATH
+                dir=${dir%/}
+                export ZEEK_PLUGIN_PATH="${dir}:$ZEEK_PLUGIN_PATH"
+                echo "Added ICSNPP plugin: $dir"
+            fi
+        fi
+    done
+}
+
+# Call the function
+add_icsnpp_plugins
 
 export ZEEK_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/zeek
 export MAXMIND_GEOIP_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/mmdb
