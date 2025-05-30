@@ -1,0 +1,9 @@
+
+make_project () {                         # mkproj my_new_app 3.13
+  local name=$1 py=${2:-"3.13"}
+  mkdir "$name" && cd "$name" || return
+  printf '[project]\nname="%s"\n' "$name" > pyproject.toml
+  uv venv --python "$py"
+  git init && echo ".venv/" > .gitignore
+  echo "# $name" > README.md
+}
