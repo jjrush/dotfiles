@@ -9,66 +9,80 @@ cursor_run() {
     fi
 }
 
-zeek_run() {
-    # Usage function
-    usage() {
-        echo "Usage: zeek_run <pcap_file>"
-        echo "Runs zeek with Spicy print enabled on a pcap file"
-        echo
-        echo "Arguments:"
-        echo "  pcap_file      Path to pcap file (required)"
-    }
-
-    # Check if help is requested
-    if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
-        usage
-        return 0
+# prepend
+add_to_path_front() {
+    if [[ ":$PATH:" != *":$1:"* ]]; then
+        export PATH="$1:$PATH"
     fi
+}
 
-    # Check for required pcap file argument
-    if [[ -z "$1" ]]; then
-        echo "Error: PCAP file argument is required"
-        usage
+# append
+add_to_path_back() {
+    if [[ ":$PATH:" != *":$1:"* ]]; then
+        export PATH="$PATH:$1"
+    fi
+}
+
+# add zeek plugins to path
+add_icsnpp_plugins() {
+    local base_dir="/home/rush/work-parsers"
+    if [ ! -d "$base_dir" ]; then
+        echo "Warning: $base_dir directory not found"
         return 1
     fi
 
-    # Validate pcap file exists and is readable
-    if [[ ! -f "$1" ]] || [[ ! -r "$1" ]]; then
-        echo "Error: PCAP file '$1' does not exist or is not readable"
-        return 1
-    fi
-
-    # Validate file extension
-    if [[ ! "$1" =~ \.(pcap|pcapng|cap)$ ]]; then
-        echo "Warning: File '$1' does not have a standard pcap extension"
-        read -p "Continue anyway? (y/N) " response
-        if [[ ! "$response" =~ ^[Yy]$ ]]; then
-            return 1
+    # Loop through each directory in /work-parsers
+    for dir in "$base_dir"/*/; do
+        if [ -d "$dir" ]; then
+            # Check if it's an ICSNPP plugin by looking for analyzer and scripts directories
+            if [ -d "${dir}analyzer" ] && [ -d "${dir}scripts" ]; then
+                # Remove trailing slash
+                dir=${dir%/}
+                # Only add if not already in path
+                if [[ ":$ZEEK_PLUGIN_PATH:" != *":$dir:"* ]]; then
+                    export ZEEK_PLUGIN_PATH="${dir}:$ZEEK_PLUGIN_PATH"
+                    echo "Added ICSNPP plugin: $dir"
+                else
+                    echo "Plugin already in path: $dir"
+                fi
+            fi
         fi
+    done
+}
+
+copy_dotfiles() {
+    local target_dir="$1"
+    local source_dir="$HOME"
+    local files=(".bashrc" ".bash_aliases" ".bash_func" ".docker_aliases")
+    
+    # Check if target directory is provided
+    if [[ -z "$target_dir" ]]; then
+        echo "Error: Please provide a target directory"
+        echo "Usage: copy_dotfiles <target_directory>"
+        return 1
     fi
-
-    local cmake='cmake .'
-    eval "$cmake"
-    local make='make'
-    eval "$make"
-    if [[ $? -eq 0 ]]; then
-        eval "clear"
-        echo "Make successful"
-    else
-        return 0
+    
+    # Create target directory if it doesn't exist
+    if [[ ! -d "$target_dir" ]]; then
+        echo "Creating target directory: $target_dir"
+        mkdir -p "$target_dir" || {
+            echo "Error: Failed to create target directory"
+            return 1
+        }
     fi
-
-    local cmd="zeek Spicy::enable_print=T -Cr $1"
-    local hlto=$(ls | grep "hlto")
-    local zeek=$(fd "__load__.zeek")
-
-    cmd+=" ${hlto}"
-    cmd+=" ${zeek}"
-
-    # Print command being executed
-    echo "Executing: $cmd"
-
-    # Execute the command
-    eval "$cmd"
-    return $?
+    
+    # Copy each file if it exists
+    for file in "${files[@]}"; do
+        if [[ -f "$source_dir/$file" ]]; then
+            echo "Copying $file to $target_dir"
+            cp "$source_dir/$file" "$target_dir/" || {
+                echo "Error: Failed to copy $file"
+                return 1
+            }
+        else
+            echo "Warning: $source_dir/$file not found, skipping"
+        fi
+    done
+    
+    echo "Dotfiles copy completed successfully!"
 }

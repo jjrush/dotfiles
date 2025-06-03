@@ -21,11 +21,23 @@ alias uuuuu='cd ../../../../..'
 # tool aliases ###################
 alias fd='fdfind'
 alias ctl='systemctl'
-alias python='python3'
 alias tidy='make clang-tidy'
 alias fast='make -j$(nproc)'
 alias fastclean='make clean && fast'
 alias ja='ninja -j$(nproc)'
+alias copydot='copy_dotfiles'
+##################################
+##################################
+
+# uv should manage python
+alias python='uv run -- python3'
+alias python3='uv run -- python3'
+alias pip='uv pip'              # drop-in replacement for pip commands
+alias pipx='uv tool'            # uv’s pipx-style interface
+alias uvp='uv pip' 
+alias uvs='uv sync'
+alias uvclean='rm -rf .venv && uv venv'
+
 ##################################
 ##################################
 
@@ -40,6 +52,7 @@ alias esize="eza --long --sort size"
 alias et="eza --long --sort modified"
 alias etree="eza --tree"
 alias la=ea
+alias lsa=ea
 alias l=e
 alias ll=el
 alias lt=et
@@ -87,14 +100,6 @@ alias opcua='parse && cd icsnpp-opcua-binary'
 
 # zeek aliases ###################
 alias zr='zeek_run'
-
-##################################
-##################################
-
-# docker aliases #################
-source ~/.docker-aliases
-alias dalias='cat ~/.docker-aliases'
-alias cdlias='c ~/.docker-aliases'
 
 ##################################
 ##################################

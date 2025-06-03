@@ -19,8 +19,8 @@ if [[ -f ~/.bash_func ]]; then
     source ~/.bash_func
 fi
 
-if [[ -f ~/.docker-aliases ]]; then
-    source ~/.docker-aliases
+if [[ -f ~/.docker_aliases ]]; then
+    source ~/.docker_aliases
 fi
 
 # fix docker
@@ -123,15 +123,6 @@ alias l='ls -CF'
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
-# Alias definitions.
-# You may want to put all your additions into a separate file like
-# ~/.bash_aliases, instead of adding them here directly.
-# See /usr/share/doc/bash-doc/examples in the bash-doc package.
-
-if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
-fi
-
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 # sources /etc/bash.bashrc).
@@ -144,34 +135,10 @@ if ! shopt -oq posix; then
 fi
 
 # appending zeek to path
-export PATH=/opt/zeek/bin:$PATH
+add_to_path_back /opt/zeek/bin
 # adding golang to the path
-export PATH=$PATH:/usr/local/go/bin
-
+add_to_path_back /usr/local/go/bin
 # add zeek plugins to path
-# Function to add ICSNPP plugins to ZEEK_PLUGIN_PATH
-add_icsnpp_plugins() {
-    local base_dir="/home/rush/work-parsers"
-    if [ ! -d "$base_dir" ]; then
-        echo "Warning: $base_dir directory not found"
-        return 1
-    fi
-
-    # Loop through each directory in /work-parsers
-    for dir in "$base_dir"/*/; do
-        if [ -d "$dir" ]; then
-            # Check if it's an ICSNPP plugin by looking for analyzer and scripts directories
-            if [ -d "${dir}analyzer" ] && [ -d "${dir}scripts" ]; then
-                # Remove trailing slash and add to ZEEK_PLUGIN_PATH
-                dir=${dir%/}
-                export ZEEK_PLUGIN_PATH="${dir}:$ZEEK_PLUGIN_PATH"
-                echo "Added ICSNPP plugin: $dir"
-            fi
-        fi
-    done
-}
-
-# Call the function
 add_icsnpp_plugins
 
 export ZEEK_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/zeek
