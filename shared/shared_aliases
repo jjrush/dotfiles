@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Safety aliases
+alias mv='mv -i'
+alias rm='rm -I -v'
+alias cp='cp -i'
+alias chmod='chmod --preserve-root'
+alias chown='chown --preserve-root'
+
+# Navigation aliases
+alias u='cd ..'
+alias uu='cd ../..'
+alias uuu='cd ../../..'
+alias uuuu='cd ../../../..'
+alias uuuuu='cd ../../../../..'
+
+# Tool aliases
+alias ctl='systemctl'
+alias tidy='make clang-tidy'
+
+# eza (modern ls replacement)
+alias eza="eza --binary --color auto --group-directories-first --git --git-repos-no-status --hyperlink --icons auto --mounts --no-permissions --octal-permissions --time-style long-iso"
+alias ls='eza'
+alias e="eza --all --long"
+alias ea="eza --all"
+alias el="eza --long"
+alias eld="eza --all --long --only-dirs --sort name"
+alias esize="eza --long --sort size"
+alias et="eza --long --sort modified"
+alias etree="eza --tree"
+alias la=ea
+alias lsa=ea
+alias l=e
+alias ll=el
+alias lt=et
+alias lsize=esize
+alias lld=eld
+
+# Git aliases
+alias clone='git clone'
+alias pull='git pull'
+alias gs='git status'
+alias gd='git diff'
+alias gaa='git add -A'
+alias gcm='git commit -m'
+
+# Code editor aliases
+alias c='cursor'
+alias scode='sudo code --no-sandbox --user-data-dir="~/.vscode-root"'
+
+# Work aliases
+alias malc='cd ~/work-malcolm'
+alias malcolm='malc'
+alias mal='malc'
+alias parse='cd ~/work-parsers'
+alias parsers='parse'
+alias par='parse'
+
+# UV Python management
+alias python='uv run -- python3'
+alias python3='uv run -- python3'
+alias pip='uv pip'
+alias pipx='uv tool'
+alias uvp='uv pip'
+alias uvs='uv sync'
+alias uvclean='rm -rf .venv && uv venv'

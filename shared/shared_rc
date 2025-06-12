@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Shared shell configuration for both bash and zsh
+
+# History settings (bash-style, will be adapted for zsh in platform-specific files)
+export HISTCONTROL=ignoreboth
+export HISTSIZE=1000
+export HISTFILESIZE=2000
+
+# Common environment variables
+export ZEEK_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/zeek
+export MAXMIND_GEOIP_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/mmdb
+
+# Source shared files (relative to dotfiles directory)
+DOTFILES_DIR="$(dirname "$(dirname "${BASH_SOURCE[0]}")")"
+
+if [[ -f "$DOTFILES_DIR/shared/shared_aliases" ]]; then
+    source "$DOTFILES_DIR/shared/shared_aliases"
+fi
+
+if [[ -f "$DOTFILES_DIR/shared/shared_functions" ]]; then
+    source "$DOTFILES_DIR/shared/shared_functions"
+fi
+
+if [[ -f "$DOTFILES_DIR/shared/docker_aliases" ]]; then
+    source "$DOTFILES_DIR/shared/docker_aliases"
+fi

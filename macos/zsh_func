@@ -1,0 +1,4 @@
+# macOS-specific functions
+
+# Currently no macOS-specific functions
+# (make_project moved to shared_functions)
