@@ -1,95 +1,193 @@
 #!/bin/bash
 
-backup_dotfiles() {
-    local dotfiles_dir="$HOME/dotfiles"
-    
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        local target_dir="$dotfiles_dir/macos"
-        echo "Detected macOS - backing up zsh files to $target_dir"
-        
-        mkdir -p "$target_dir"
-        
-        if [[ -f "$HOME/.zshrc" ]]; then
-            mv "$HOME/.zshrc" "$target_dir/zshrc"
-            echo "Moved .zshrc to $target_dir/zshrc"
-        fi
-        
-        if [[ -f "$HOME/.zsh_aliases" ]]; then
-            mv "$HOME/.zsh_aliases" "$target_dir/zsh_aliases"
-            echo "Moved .zsh_aliases to $target_dir/zsh_aliases"
-        fi
-        
-        if [[ -f "$HOME/.zsh_func" ]]; then
-            mv "$HOME/.zsh_func" "$target_dir/zsh_func"
-            echo "Moved .zsh_func to $target_dir/zsh_func"
-        fi
-        
+# Exit on error inside pipeline, treat unset vars as error, and propagate failures
+set -euo pipefail
+
+############################################
+# Configuration
+############################################
+# Lists of filenames (without dot prefix) for each platform and shared
+LINUX_FILES=(bashrc bash_aliases bash_func)
+MACOS_FILES=(zshrc zsh_aliases zsh_func)
+SHARED_FILES=(docker_aliases shared_aliases shared_functions shared_rc)
+
+############################################
+# Helper functions
+############################################
+# copy_file <src> <dst>
+# Performs a recursive, attribute-preserving copy and prints a ✔︎/✘ indicator.
+copy_file() {
+    local src=$1 dst=$2
+    if cp -a "$src" "$dst" 2>/dev/null; then
+        echo "✔︎ Copied $src → $dst"
     else
-        local target_dir="$dotfiles_dir/linux"
-        echo "Detected Linux - backing up bash files to $target_dir"
-        
-        mkdir -p "$target_dir"
-        
-        if [[ -f "$HOME/.bashrc" ]]; then
-            mv "$HOME/.bashrc" "$target_dir/bashrc"
-            echo "Moved .bashrc to $target_dir/bashrc"
-        fi
-        
-        if [[ -f "$HOME/.bash_aliases" ]]; then
-            mv "$HOME/.bash_aliases" "$target_dir/bash_aliases"
-            echo "Moved .bash_aliases to $target_dir/bash_aliases"
-        fi
-        
-        if [[ -f "$HOME/.bash_func" ]]; then
-            mv "$HOME/.bash_func" "$target_dir/bash_func"
-            echo "Moved .bash_func to $target_dir/bash_func"
-        fi
+        echo "✘ Failed to copy $src" >&2
+        return 1
     fi
-    
-    echo "Backup completed!"
 }
 
+mk_target_dir() {
+    local dir=$1
+    [[ -d $dir ]] || mkdir -p "$dir"
+}
+
+# NEW: detect if two files differ (ignores if either is missing)
+files_differ() {
+    local f1=$1 f2=$2
+    [[ -f "$f1" && -f "$f2" ]] && ! cmp -s "$f1" "$f2"
+}
+
+# NEW: before overwriting during restore, back up the destination if it diverges
+backup_if_different() {
+    local src=$1 dst=$2
+    if files_differ "$src" "$dst"; then
+        local ts
+        ts=$(date +%Y%m%d%H%M%S)
+        local bak="${dst}.pre-restore-${ts}"
+        echo "⚠︎ $dst differs from repo; backing up to $bak"
+        cp -a "$dst" "$bak"
+    fi
+}
+
+# NEW: show which files in ~ differ from the repo versions
+status_dotfiles() {
+    local dotfiles_dir="$HOME/dotfiles"
+    local platform_files source_dir
+
+    if [[ "${OSTYPE}" == "darwin"* ]]; then
+        platform_files=("${MACOS_FILES[@]}")
+        source_dir="$dotfiles_dir/macos"
+    else
+        platform_files=("${LINUX_FILES[@]}")
+        source_dir="$dotfiles_dir/linux"
+    fi
+    local shared_dir="$dotfiles_dir/shared"
+
+    local changed=0
+
+    for f in "${platform_files[@]}"; do
+        local repo="$source_dir/${f}"
+        local home="$HOME/.${f}"
+        if files_differ "$repo" "$home"; then
+            echo "modified: .${f}"
+            changed=1
+        fi
+    done
+
+    for f in "${SHARED_FILES[@]}"; do
+        local repo="$shared_dir/${f}"
+        local home="$HOME/${f}"
+        if files_differ "$repo" "$home"; then
+            echo "modified: ${f}"
+            changed=1
+        fi
+    done
+
+    if [[ $changed -eq 0 ]]; then
+        echo "No local modifications detected."
+    fi
+    return $changed
+}
+
+############################################
+# backup_dotfiles – copies the user's current files into the repo
+############################################
+backup_dotfiles() {
+    local dotfiles_dir="$HOME/dotfiles"
+    local failed=0
+
+    # Determine platform-specific settings
+    local platform_files target_dir
+    if [[ "${OSTYPE}" == "darwin"* ]]; then
+        platform_files=("${MACOS_FILES[@]}")
+        target_dir="$dotfiles_dir/macos"
+    else
+        platform_files=("${LINUX_FILES[@]}")
+        target_dir="$dotfiles_dir/linux"
+    fi
+    local shared_dir="$dotfiles_dir/shared"
+
+    # Ensure directories exist
+    mk_target_dir "$target_dir"
+    mk_target_dir "$shared_dir"
+
+    # Copy platform-specific dotfiles
+    for f in "${platform_files[@]}"; do
+        local src="$HOME/.${f}"
+        local dst="$target_dir/${f}"
+        [[ -f "$src" ]] && copy_file "$src" "$dst" || echo "(skip) $src not found"
+    done
+
+    # Copy shared files (no leading dot in home)
+    for f in "${SHARED_FILES[@]}"; do
+        local src="$HOME/${f}"
+        local dst="$shared_dir/${f}"
+        [[ -f "$src" ]] && copy_file "$src" "$dst" || echo "(skip) $src not found"
+    done
+
+    echo "Backup completed!"
+    return $failed
+}
+
+############################################
+# restore_dotfiles – copies the repo versions into the user's home
+############################################
 restore_dotfiles() {
     local dotfiles_dir="$HOME/dotfiles"
-    
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        local source_dir="$dotfiles_dir/macos"
-        echo "Detected macOS - restoring zsh files from $source_dir"
-        
-        if [[ -f "$source_dir/zshrc" ]]; then
-            cp "$source_dir/zshrc" "$HOME/.zshrc"
-            echo "Restored $source_dir/zshrc to ~/.zshrc"
-        fi
-        
-        if [[ -f "$source_dir/zsh_aliases" ]]; then
-            cp "$source_dir/zsh_aliases" "$HOME/.zsh_aliases"
-            echo "Restored $source_dir/zsh_aliases to ~/.zsh_aliases"
-        fi
-        
-        if [[ -f "$source_dir/zsh_func" ]]; then
-            cp "$source_dir/zsh_func" "$HOME/.zsh_func"
-            echo "Restored $source_dir/zsh_func to ~/.zsh_func"
-        fi
-        
+    local failed=0
+
+    # Determine platform-specific settings
+    local platform_files source_dir
+    if [[ "${OSTYPE}" == "darwin"* ]]; then
+        platform_files=("${MACOS_FILES[@]}")
+        source_dir="$dotfiles_dir/macos"
     else
-        local source_dir="$dotfiles_dir/linux"
-        echo "Detected Linux - restoring bash files from $source_dir"
-        
-        if [[ -f "$source_dir/bashrc" ]]; then
-            cp "$source_dir/bashrc" "$HOME/.bashrc"
-            echo "Restored $source_dir/bashrc to ~/.bashrc"
-        fi
-        
-        if [[ -f "$source_dir/bash_aliases" ]]; then
-            cp "$source_dir/bash_aliases" "$HOME/.bash_aliases"
-            echo "Restored $source_dir/bash_aliases to ~/.bash_aliases"
-        fi
-        
-        if [[ -f "$source_dir/bash_func" ]]; then
-            cp "$source_dir/bash_func" "$HOME/.bash_func"
-            echo "Restored $source_dir/bash_func to ~/.bash_func"
-        fi
+        platform_files=("${LINUX_FILES[@]}")
+        source_dir="$dotfiles_dir/linux"
     fi
-    
+    local shared_dir="$dotfiles_dir/shared"
+
+    # Copy platform-specific files
+    for f in "${platform_files[@]}"; do
+        local src="$source_dir/${f}"
+        local dst="$HOME/.${f}"
+        if [[ -f "$src" ]]; then
+            backup_if_different "$src" "$dst"
+            copy_file "$src" "$dst"
+        else
+            echo "(skip) $src not found"
+        fi
+    done
+
+    # Copy shared files
+    for f in "${SHARED_FILES[@]}"; do
+        local src="$shared_dir/${f}"
+        local dst="$HOME/${f}"
+        if [[ -f "$src" ]]; then
+            backup_if_different "$src" "$dst"
+            copy_file "$src" "$dst"
+        else
+            echo "(skip) $src not found"
+        fi
+    done
+
     echo "Restore completed!"
+    return $failed
 }
+
+############################################
+# Command-line interface
+############################################
+usage() {
+    echo "Usage: $(basename "$0") {backup|restore|status}"
+}
+
+# If the script is executed directly (not sourced), dispatch CLI
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    case "${1:-}" in
+        backup)  backup_dotfiles ;;
+        restore) restore_dotfiles ;;
+        status)  status_dotfiles  ;;
+        *) usage; exit 1 ;;
+    esac
+fi
