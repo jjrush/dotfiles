@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------
+# 00_env – common environment, functions & aliases for ALL shells
+# -------------------------------------------------------------
+
+# Derive repo root (…/dotfiles) from this file location unless
+# DOTFILES_DIR is already provided by the wrapper.
+export DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
+
+# Facts about the current host ------------------------------------------------
+export DOTFILES_OS="$(uname -s)"        # Darwin, Linux, …
+export DOTFILES_SH="${ZSH_VERSION:+zsh}${BASH_VERSION:+bash}"
+
+# PATH helpers ----------------------------------------------------------------
+add_path_front() {
+  case ":$PATH:" in *":$1:"*) ;; *) PATH="$1:$PATH";; esac
+}
+add_path_back()  {
+  case ":$PATH:" in *":$1:"*) ;; *) PATH="$PATH:$1";; esac
+}
+
+# Universal PATH entries
+add_path_back "$HOME/.local/bin"
+
+# Custom PATH entries
+add_path_back "$HOME/bin"
+
+# (legacy files in ./shared are no longer sourced – everything is now inside
+#  shell/common.  Keep this stanza commented for a few weeks while migrating)
+# for f in "$DOTFILES_DIR"/shared/{shared_aliases,shared_functions,docker_aliases}; do
+#   [ -r "$f" ] && . "$f"
+# done 

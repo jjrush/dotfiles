@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Only run on Linux
+[ "$DOTFILES_OS" = "Linux" ] || return 0
+
+# Go, Zeek, etc.
+add_path_back "/usr/local/go/bin"
+add_path_back "/opt/zeek/bin" 

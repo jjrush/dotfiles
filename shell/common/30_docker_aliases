@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------
+# 30_docker_aliases – Docker & docker-compose helpers for all shells
+# -------------------------------------------------------------
+
+### ───────────────────────────── Generics ──────────────────────────────── ###
+alias dps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
+alias dim='docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"'
+alias dstats='docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"'
+alias dip='docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
+
+dcl () { docker compose logs -f --tail=100 "$@"; }   # dcl [svc ...]
+
+dsh () { docker exec  -it "$1" bash 2>/dev/null || docker exec -it "$1" sh; }
+
+# build & prune helpers
+alias dbuild='docker build --no-cache'
+alias dclean='docker rmi $(docker images -f "dangling=true" -q)'
+alias dcleanall='docker system prune -a --volumes -f'
+alias dprune='docker container prune -f'
+alias dvprune='docker volume prune -f'
+alias dnet='docker network ls'
+alias dvols='docker volume ls'
+
+# stop / kill everything fast
+alias dstop='docker stop $(docker ps -q)'
+alias dkall='docker kill $(docker ps -q)'
+
+### ────────────────────────── Compose – generic ────────────────────────── ###
+alias dcu='docker compose up  -d'
+alias dcd='docker compose down'
+alias dcdv='docker compose down -v'
+alias dcr='docker compose restart'
+alias dcb='docker compose build --pull'
+alias dce='docker compose exec'
+alias dcp='docker compose ps --format "table {{.Name}}\t{{.State}}\t{{.Health}}\t{{.Ports}}"'
+
+### ────────────────────────── Malcolm-specific ─────────────────────────── ###
+alias drmi='docker rmi $(docker images "ghcr.io/idaholab/malcolm/*" -q)'
+
+alias mos='docker compose exec opensearch'
+alias mzb='docker compose exec zeek bash'
+alias msl='docker compose exec suricata-live bash'
+alias mnb='docker compose exec netbox bash'
+alias mak='docker compose exec arkime bash'
+alias mdl='docker compose exec dashboards bash'
+
+alias mhc='docker compose ps --format "table {{.Name}}\t{{.State}}\t{{.Health}}"'
+
+alias os-health='curl -sk https://os.malcolm.local/_cluster/health?pretty'
+alias os-indices='curl -sk https://os.malcolm.local/_cat/indices?v'
+
+os-rate () {
+  curl -sk https://os.malcolm.local/_cluster/stats?human \
+    | jq -r "\"Ingest: \(.nodes.ingest.total.stats.ingest.current) docs/s\""
+}
+
+mupload () {
+  [[ -f "$1" ]] || { echo "Usage: mupload <file.pcap>"; return 1; }
+  curl -k -F "file=@$1" https://upload.malcolm.local/upload
+}
+
+### ──────────────────────── Convenience helpers ──────────────────────── ###
+
+dgrep () { docker ps --format '{{.Names}}' | grep -i "$@"; }
+
+mcompose () ( cd ~/work-malcolm/Malcolm && docker compose "$@" )
+
+dex () { dsh "$(docker ps --format '{{.Names}}' | grep -m1 "$1")"; } 

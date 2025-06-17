@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Only run on macOS
+[ "$DOTFILES_OS" = "Darwin" ] || return 0
+
+# Homebrew
+add_path_back "/opt/homebrew/bin"
+
+# Qt (needed by Wireshark, etc.)
+add_path_back "/opt/homebrew/opt/qt/bin" 

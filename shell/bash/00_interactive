@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# 00_interactive – sourced ONLY for interactive bash sessions
+# ---------------------------------------------------------------------------
+[[ $- == *i* ]] || return 0  # abort if non-interactive
+
+# History -------------------------------------------------------------------
+HISTCONTROL=ignoreboth
+HISTSIZE=5000
+HISTFILESIZE=20000
+shopt -s histappend
+PROMPT_COMMAND='history -a'
+
+# Prompt --------------------------------------------------------------------
+# green user@host blue cwd $
+PS1='\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '
+
+# Better grep colours if available
+if [ -x /usr/bin/dircolors ]; then
+  eval "$(dircolors -b)"
+  alias grep='grep --color=auto'
+fi
+
+# Bash completion -----------------------------------------------------------
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  fi
+fi 
