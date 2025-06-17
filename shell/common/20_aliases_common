@@ -37,6 +37,8 @@ alias zeek_run='zeek_runner'
 alias zr='zeek_run'
 alias zrf='zr -f'
 alias zrb='zr --build'
+alias zrp='zr --pcap'
+alias zrl='zr -l'
 
 # eza (modern ls replacement) --------------------------------------------------
 alias eza="eza --binary --color auto --group-directories-first --git --git-repos-no-status --hyperlink --icons auto --mounts --no-permissions --octal-permissions --time-style long-iso"
@@ -71,7 +73,7 @@ alias gad='git add -u'
 alias gcm='git commit -m'
 
 # Code editor -----------------------------------------------------------------
-alias c='cursor'
+alias c='cursor_run'
 alias scode='sudo code --no-sandbox --user-data-dir="~/.vscode-root"'
 
 # Project helpers / UV --------------------------------------------------------

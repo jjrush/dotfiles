@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# 40_functions – functions that work in BOTH bash and zsh
+# ---------------------------------------------------------------------------
+
+cursor_run() {
+    local path="$1"
+    if [[ "$path" == "." ]]; then
+        path="$(pwd)"
+    fi
+    { output=$(cursor "$path") & } > /dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+        echo "Cursor starting..."
+    else
+        echo "Cursor failed to start"
+    fi
+}

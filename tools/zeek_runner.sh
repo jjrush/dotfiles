@@ -43,7 +43,7 @@ Flags:
 
 Examples:
   zr -f                         # show pcaps with numbers
-  zr --pcap 0 -- -C             # run on first pcap, forward -C to Zeek
+  zr --pcap 0 -- -B             # run on first pcap, forward -B to Zeek
   zr --build --pcap auth        # build then run on pcap matching 'auth'
 
 USAGE
@@ -71,8 +71,13 @@ find_repo_root() {
 }
 
 is_spicy_repo() {
-    # Spicy plugin repos contain .spicy sources or .hlto artefacts.
-    find "$1" -maxdepth 3 \( -name '*.spicy' -o -name '*.hlto' \) -print -quit | grep -q .
+    # Treat the repository as Spicy if it contains any *.spicy source files.
+    # Using Bash's recursive globbing avoids 'permission denied' errors that can
+    # arise with `find`. We enable `globstar` briefly for this check.
+    shopt -s globstar nullglob
+    local spicy_files=( "$1"/**/*.spicy )
+    shopt -u globstar nullglob
+    (( ${#spicy_files[@]} > 0 ))
 }
 
 search_pcap() {
@@ -105,8 +110,10 @@ search_pcap() {
 # gather_pcaps(): collect up to 100 pcap/pcapng files for consistent ordering
 gather_pcaps() {
     local base="$1"
-    find "$base" \( -path '*/tests' -o -path '*/traces' -o -path '*/pcaps' \) \
-        -type f -regextype posix-extended -regex ".*\\.(pcap|pcapng)$" -print 2>/dev/null |
+    # Recursively search for capture files under the supplied base directory.
+    # We keep the output deterministic (sorted) and limit it to the first 100
+    # hits to avoid overwhelming the display.
+    find "$base" -type f -regextype posix-extended -regex ".*\\.(pcap|pcapng)$" -print 2>/dev/null |
         sort | head -n 100
 }
 
@@ -128,19 +135,24 @@ list_parsers() {
 find_pcaps_in_dir() {
     local dir="$1"
     echo -e "${GREEN}PCAP files under $dir:${NC}"
-    local pcaps
-    pcaps=$(gather_pcaps "$dir")
-    if [[ -z "$pcaps" ]]; then
+
+    # Read all pcap paths into an array to avoid edge-cases with here-strings
+    # when the final line lacks a trailing newline (common with command
+    # substitution). Using an array guarantees we iterate over every entry.
+    local -a pcaps_array
+    mapfile -t pcaps_array < <(gather_pcaps "$dir")
+
+    if (( ${#pcaps_array[@]} == 0 )); then
         echo -e "${RED}  (none found)${NC}"
         return 1
     fi
-    local idx=0
-    while IFS= read -r file; do
+
+    for idx in "${!pcaps_array[@]}"; do
+        local file="${pcaps_array[$idx]}"
         local size
         size=$(du -h "$file" | cut -f1)
         echo -e "  [${idx}] ${BLUE}${file}${NC} ${YELLOW}($size)${NC}"
-        ((idx++))
-    done <<< "$pcaps"
+    done
 }
 
 # --- argument parsing ---------------------------------------------------------
@@ -164,7 +176,7 @@ while (( $# > 0 )); do
         --target)   TARGET="$2"; shift 2;;
         --hlto)     HLTO="$2"; shift 2;;
         --scripts)  SCRIPTS="$2"; shift 2;;
-        --pcap)     PCAP_PATTERN="$2"; shift 2;;
+        --pcap|-p)  PCAP_PATTERN="$2"; shift 2;;
         --list|-l)  LIST_PARSERS=1; shift;;
         --find|-f)  SHOW_PCAPS=1; shift;;
         --explain)  SHOW_EXPLAIN=1; shift;;
@@ -185,9 +197,11 @@ if (( SHOW_EXPLAIN )); then
     exit 0
 fi
 
-# Determine repository root.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(find_repo_root "$SCRIPT_DIR")"
+# Determine repository root based on the caller's *current* directory, not the
+# location of this helper script. This allows `zr` to live anywhere on the
+# $PATH while still correctly identifying the plugin repository the user is
+# working inside of.
+REPO_ROOT="$(find_repo_root "$(pwd)")"
 
 # Validate location: ensure inside $WORK_ROOT/parsers
 [[ "${REPO_ROOT}" != ${WORK_ROOT}/parsers/* ]] && \
@@ -236,8 +250,12 @@ echo_err "Detected plugin type: $TYPE"
 if [[ "$TYPE" == "spicy" ]]; then
     # Discover .hlto
     if [[ -z "$HLTO" ]]; then
-        HLTO=$(find "$REPO_ROOT/build" -maxdepth 1 -name '*.hlto' -print -quit 2>/dev/null || true)
-        [[ -z "$HLTO" ]] && die "Could not find .hlto file in build/. Use --hlto to specify."
+        # Look for a compiled HLTO somewhere under the build directory (up to 4
+        # levels deep), again silencing any permission errors.
+        HLTO=$(find "$REPO_ROOT/build" -maxdepth 4 -name '*.hlto' -print -quit 2>/dev/null || true)
+        if [[ -z "$HLTO" ]]; then
+            die "No .hlto file found under build/. The plugin may not be built yet. Run 'zr --build --pcap <file>' (or build manually) and try again, or use --hlto to specify the path explicitly."
+        fi
     fi
     [[ ! -f "$HLTO" ]] && die "HLTO file '$HLTO' not found."
 
@@ -252,7 +270,24 @@ if [[ "$TYPE" == "spicy" ]]; then
 else
     # BinPAC target path
     if [[ -z "$TARGET" ]]; then
-        TARGET="icsnpp/$(basename "$REPO_ROOT")"
+        repo_name="$(basename "$REPO_ROOT")"
+
+        # If the directory name starts with the common "icsnpp-" prefix, drop it
+        # so we don't end up with "icsnpp/icsnpp-foo".
+        repo_name="${repo_name#icsnpp-}"
+
+        # Replace invalid characters while preserving hyphens so that names like
+        #   "icsnpp-opcua-binary" -> "opcua-binary" (hyphen intact).  We:
+        #  * convert '+' to '_' (common in some repo names)
+        #  * convert any remaining character that's *not* alnum, hyphen, or
+        #    underscore to '_'
+        #  * collapse multiple consecutive underscores
+        #  * trim leading/trailing underscores or hyphens for neatness
+        repo_name="$(echo "$repo_name" |
+            sed -e 's/+/_/g' -e 's/[^A-Za-z0-9_-]/_/g' \
+                -e 's/__*/_/g' -e 's/^[_-]\+//' -e 's/[_-]\+$//')"
+
+        TARGET="icsnpp/${repo_name}"
     fi
     ZEEK_MAIN_ARGS=("$TARGET")
 fi
@@ -269,7 +304,12 @@ echo_err "Running: ${ZEEK_CMD[*]}"
 
 # Export plugin path, preserving previous value
 PREV_ZEEK_PLUGIN_PATH="${ZEEK_PLUGIN_PATH:-}"
-export ZEEK_PLUGIN_PATH="$REPO_ROOT"
+if [[ "$TYPE" == "binpac" ]]; then
+    # BinPAC plugins live at the repository root, so we expose that via
+    # ZEEK_PLUGIN_PATH.  Spicy analyzers don't need this and leaving it unset
+    # avoids permission-denied warnings when Zeek walks the directory tree.
+    export ZEEK_PLUGIN_PATH="$REPO_ROOT"
+fi
 
 # --- run ----------------------------------------------------------------------
 "${ZEEK_CMD[@]}"
