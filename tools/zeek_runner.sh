@@ -57,6 +57,47 @@ die() {
     echo -e "${RED}[zeek_runner]${NC} $1" >&2; exit 1
 }
 
+# Explanation helper -----------------------------------------------------------
+explain() {
+    cat <<'EXPLAIN'
+
+Why does zr/zeek_runner exist?
++--------------------------------
+• BinPAC plugins - compiled with the classic Zeek plugin skeleton:
+    zeek icsnpp/<plugin-name> -Cr <file.pcap>
+
+  Build step:   ./configure && make
+
+• Spicy plugins - load a compiled HLTO (the parser) *and* the corresponding
+  Zeek scripts that export events/protocol logic:
+    zeek build/<something>.hlto scripts/__load__.zeek -Cr <file.pcap>
+
+  Build step:   mkdir build && cd build && cmake .. && make
+
+zr abstracts these differences so you can simply:
+
+    zr --pcap <pattern-or-index>
+
+and it will:
+  1. Detect whether the repo is Spicy (looks for .spicy/.hlto files) or BinPAC.
+  2. Temporarily set ZEEK_PLUGIN_PATH so Zeek finds the freshly-built plugin
+     without installing it system-wide.
+  3. Build the plugin when you pass --build (running ./configure for BinPAC
+     if present, otherwise CMake for Spicy).
+  4. Find a matching pcap (or use an index from --find) so you don't have
+     to type long paths.
+  5. Forward any extra flags after "--" straight to Zeek.
+
+Shortcuts & discovery:
+  zr -l            # list all parser repos in $WORK_ROOT/parsers
+  zr -f            # list pcaps in the current repo with indices
+  zr --pcap 3      # use the 3rd pcap from that list
+
+That's it—no more looking up how to build/run each flavour.
+
+EXPLAIN
+}
+
 # Ascend the directory tree until we hit a directory containing CMakeLists.txt
 # (the presumed repository root) or $WORK_ROOT/parsers.
 find_repo_root() {
@@ -323,47 +364,3 @@ else
 fi
 
 exit $STATUS
-
-# Explanation helper -----------------------------------------------------------
-explain() {
-    cat <<'EXPLAIN'
-
-Why does zr/zeek_runner exist?
-+--------------------------------
-Developing Zeek protocol analyzers requires remembering two *very* different
-invocations:
-
-• BinPAC plugins - compiled with the classic Zeek plugin skeleton:
-    zeek icsnpp/<plugin-name> -Cr <file.pcap>
-
-  Build step:   ./configure && make
-
-• Spicy plugins - load a compiled HLTO (the parser) *and* the corresponding
-  Zeek scripts that export events/protocol logic:
-    zeek build/<something>.hlto scripts/__load__.zeek -Cr <file.pcap>
-
-  Build step:   mkdir build && cd build && cmake .. && make
-
-zr abstracts these differences so you can simply:
-
-    zr --pcap <pattern-or-index>
-
-and it will:
-  1. Detect whether the repo is Spicy (looks for .spicy/.hlto files) or BinPAC.
-  2. Temporarily set ZEEK_PLUGIN_PATH so Zeek finds the freshly-built plugin
-     without installing it system-wide.
-  3. Build the plugin when you pass --build (running ./configure for BinPAC
-     if present, otherwise CMake for Spicy).
-  4. Find a matching pcap (or use an index from --find) so you don't have
-     to type long paths.
-  5. Forward any extra flags after "--" straight to Zeek.
-
-Shortcuts & discovery:
-  zr -l            # list all parser repos in $WORK_ROOT/parsers
-  zr -f            # list pcaps in the current repo with indices
-  zr --pcap 3      # use the 3rd pcap from that list
-
-That's it—no more looking up how to build/run each flavour.
-
-EXPLAIN
-}
