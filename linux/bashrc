@@ -8,26 +8,37 @@ case $- in
       *) return;;
 esac
 
-#------------------------------
-# my edits
-
+##############################################################################
+# >> sourcing various files >> #
 if [[ -f ~/.bash_aliases ]]; then
     source ~/.bash_aliases
+    ALIAS_RESULT=$?
+else 
+    echo "ERROR: ~/.bash_aliases not found"
+    exit 1
 fi
 
 if [[ -f ~/.bash_func ]]; then
     source ~/.bash_func
+    FUNC_RESULT=$?
+else 
+    echo "ERROR: ~/.bash_func not found"
+    exit 1
 fi
 
 if [[ -f ~/.docker_aliases ]]; then
     source ~/.docker_aliases
+    DOCKER_RESULT=$?
+else 
+    echo "ERROR: ~/.docker_aliases not found"
+    exit 1
 fi
 
-# fix docker
-export DOCKER_HOST=unix:///var/run/docker.sock
+# << sourcing various files << #
+##############################################################################
 
-#------------------------------
-
+##############################################################################
+# >> history setup >> #
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
 HISTCONTROL=ignoreboth
@@ -42,10 +53,18 @@ else
 fi
 export PROMPT_COMMAND
 
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+# Keep the file manageable --------------------------------------------------
+HISTSIZE=5000            # lines kept in memory
+HISTFILESIZE=20000       # lines kept on disk
+shopt -s histappend      # append, don't overwrite on shell exit
 
+# Write *new* commands out immediately, but never re-read the whole file
+PROMPT_COMMAND='history -a'
+# << history setup << #
+##############################################################################
+
+##############################################################################
+# >> bash setup >> #
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
@@ -128,17 +147,51 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
+# << bash setup << #
+##############################################################################
+
+##############################################################################
+# >> PATH setup >> #
+
+# prepend $HOME/bin to PATH (this is for handling zkg since it has python conflicts so we make zkg a uv wrapper that points to zkg.real and handles the environment automagically)
+add_to_path_front "$HOME/bin"
 
 # appending zeek to path
 add_to_path_back /opt/zeek/bin
+
 # adding golang to the path
 add_to_path_back /usr/local/go/bin
-# add zeek plugins to path
-add_icsnpp_plugins
 
+# add work root to path
+export WORK_ROOT="$HOME/work"
+add_to_path_back "$WORK_ROOT"
+
+# add uv to path
+add_to_path_back "$HOME/.local/bin"
+
+# add zkg to path
+add_to_path_back "$HOME/.zkg/bin"
+
+# << PATH setup << #
+##############################################################################
+
+##############################################################################
+# >> nvm setup >> #
+# export NVM_DIR="$HOME/.nvm"
+# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+# [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# << nvm setup << #
+##############################################################################
+
+##############################################################################
+# >> misc setup >> #
+
+# fix docker
+export DOCKER_HOST=unix:///var/run/docker.sock
+
+# fix zeek db download urls for malcolm (temporary)
 export ZEEK_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/zeek
 export MAXMIND_GEOIP_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/mmdb
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# << misc setup << #
+##############################################################################

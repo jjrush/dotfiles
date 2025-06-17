@@ -1,12 +1,11 @@
 #!/bin/bash
 
-
 cursor_run() {
     local path="$1"
     if [[ "$path" == "." ]]; then
         path="$(pwd)"
     fi
-    { output=$(~/Apps/cursor/cursor.AppImage "$path") & } > /dev/null 2>&1
+    { output=$(~/bin/cursor "$path") & } > /dev/null 2>&1
     if [[ $? -eq 0 ]]; then
         echo "Cursor starting..."
     else
@@ -39,7 +38,7 @@ add_icsnpp_plugins() {
     # Loop through each directory in /work-parsers
     for dir in "$base_dir"/*/; do
         if [ -d "$dir" ]; then
-            # Check if it's an ICSNPP plugin by looking for analyzer and scripts directories
+            # Check if it's Spicy ICSNPP plugin by looking for analyzer and scripts directories
             if [ -d "${dir}analyzer" ] && [ -d "${dir}scripts" ]; then
                 # Remove trailing slash
                 dir=${dir%/}
@@ -47,6 +46,19 @@ add_icsnpp_plugins() {
                 if [[ ":$ZEEK_PLUGIN_PATH:" != *":$dir:"* ]]; then
                     export ZEEK_PLUGIN_PATH="${dir}:$ZEEK_PLUGIN_PATH"
                     echo "Added ICSNPP plugin: $dir"
+                else
+                    echo "Plugin already in path: $dir"
+                fi
+            fi
+
+            # Check if it's a BinPAC ICSNPP plugin by looking for for a src directory, scripts directory, and configure script
+            if [ -d "${dir}src" ] && [ -d "${dir}scripts" ] && [ -f "${dir}configure" ]; then
+                # Remove trailing slash
+                dir=${dir%/}
+                # Only add if not already in path
+                if [[ ":$ZEEK_PLUGIN_PATH:" != *":$dir:"* ]]; then
+                    export ZEEK_PLUGIN_PATH="${dir}:$ZEEK_PLUGIN_PATH"
+                    echo "Added BinPAC ICSNPP plugin: $dir"
                 else
                     echo "Plugin already in path: $dir"
                 fi

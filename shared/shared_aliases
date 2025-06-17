@@ -49,10 +49,10 @@ alias c='cursor'
 alias scode='sudo code --no-sandbox --user-data-dir="~/.vscode-root"'
 
 # Work aliases
-alias malc='cd ~/work-malcolm'
+alias malc='cd $WORK_ROOT/malcolm'
 alias malcolm='malc'
 alias mal='malc'
-alias parse='cd ~/work-parsers'
+alias parse='cd $WORK_ROOT/parsers'
 alias parsers='parse'
 alias par='parse'
 

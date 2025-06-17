@@ -87,7 +87,6 @@ alias gcm='git commit -m'
 # code aliases
 alias c='cursor'
 alias scode='sudo code --no-sandbox --user-data-dir="~/.vscode-root"' # run vscode as sudo
-alias cursor='cursor_run'
 alias cbash='c ~/.bashrc'
 alias clias='c ~/.bash_aliases'
 alias cfunc='c ~/.bash_func'
@@ -95,25 +94,28 @@ alias cfunc='c ~/.bash_func'
 ##################################
 
 # work aliases
-alias malc='cd ~/work-malcolm'
+alias malc='cd $WORK_ROOT/malcolm'
 alias malcolm='malc'
 alias mal='malc'
-alias ics='cd ~/work-icsnpp'
 
-alias parse='cd ~/work-parsers'
-alias parsers='parse'
-alias par='parse'
-alias roc='parse && cd rocplus'
-alias opcua='parse && cd icsnpp-opcua-binary'
+alias ics='cd $WORK_ROOT/icsnpp'
+alias parsers='cd $WORK_ROOT/parsers'
+alias parse='parsers'
 
 ##################################
 ##################################
 
-# zeek aliases
+# Various tool aliases
+alias zeek_run='zeek_runner'
 alias zr='zeek_run'
+alias zrf='zr -f'
+alias zrb='zr --build'
 
-##################################
-##################################
 
 # misc aliases
-alias check='bash ~/tools/check-env.sh' # check docker env files to prevent database pw mismatches
+alias check='bash check-env.sh' # check docker env files to prevent database pw mismatches
+
+##################################
+##################################
+
+
