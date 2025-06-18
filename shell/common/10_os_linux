@@ -4,4 +4,11 @@
 
 # Go, Zeek, etc.
 add_path_back "/usr/local/go/bin"
-add_path_back "/opt/zeek/bin" 
+add_path_back "/opt/zeek/bin"
+
+# fix docker
+export DOCKER_HOST=unix:///var/run/docker.sock
+
+# fix zeek db download urls for malcolm (temporary)
+export ZEEK_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/zeek
+export MAXMIND_GEOIP_DB_ALTERNATE_DOWNLOAD_URL=https://malcolm.fyi/mmdb

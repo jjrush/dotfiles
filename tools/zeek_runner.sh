@@ -44,7 +44,7 @@ Flags:
 Examples:
   zr -f                         # show pcaps with numbers
   zr --pcap 0 -- -B             # run on first pcap, forward -B to Zeek
-  zr --build --pcap auth        # build then run on pcap matching 'auth'
+  zr --build --p auth           # build then run on pcap matching 'auth'
 
 USAGE
 }
