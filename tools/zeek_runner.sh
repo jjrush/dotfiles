@@ -215,7 +215,7 @@ while (( $# > 0 )); do
     case "$1" in
         --build)    BUILD=1; shift;;
         --target)   TARGET="$2"; shift 2;;
-        --hlto)     HLTO="$2"; shift 2;;
+        --hlto)     HLTO="$2"; TARGET="$2"; shift 2;;
         --scripts)  SCRIPTS="$2"; shift 2;;
         --pcap|-p)  PCAP_PATTERN="$2"; shift 2;;
         --list|-l)  LIST_PARSERS=1; shift;;
@@ -289,25 +289,21 @@ echo_err "Detected plugin type: $TYPE"
 
 # Prepare Zeek command parts depending on type.
 if [[ "$TYPE" == "spicy" ]]; then
-    # Discover .hlto
-    if [[ -z "$HLTO" ]]; then
-        # Look for a compiled HLTO somewhere under the build directory (up to 4
-        # levels deep), again silencing any permission errors.
-        HLTO=$(find "$REPO_ROOT/build" -maxdepth 4 -name '*.hlto' -print -quit 2>/dev/null || true)
-        if [[ -z "$HLTO" ]]; then
-            die "No .hlto file found under build/. The plugin may not be built yet. Run 'zr --build --pcap <file>' (or build manually) and try again, or use --hlto to specify the path explicitly."
-        fi
+    # Determine the compiled HLTO path (held in TARGET for Spicy mode).
+    if [[ -z "$TARGET" ]]; then
+        TARGET=$(find "$REPO_ROOT/build" -maxdepth 4 -name '*.hlto' -print -quit 2>/dev/null || true)
+        [[ -z "$TARGET" ]] && die "No .hlto file found under build/. The plugin may not be built yet. Run 'zr --build --pcap <file>' (or build manually) and try again, or use --hlto to specify the path explicitly."
     fi
-    [[ ! -f "$HLTO" ]] && die "HLTO file '$HLTO' not found."
+    [[ ! -f "$TARGET" ]] && die "HLTO file '$TARGET' not found."
 
-    # Discover scripts path
+    # Discover Zeek scripts path for the plugin.
     if [[ -z "$SCRIPTS" ]]; then
         SCRIPTS=$(find "$REPO_ROOT" -name '__load__.zeek' -print -quit 2>/dev/null || true)
         [[ -z "$SCRIPTS" ]] && die "Could not locate __load__.zeek. Use --scripts to specify."
     fi
     [[ ! -f "$SCRIPTS" ]] && die "Zeek script '$SCRIPTS' not found."
 
-    ZEEK_MAIN_ARGS=("$HLTO" "$SCRIPTS")
+    ZEEK_MAIN_ARGS=("$TARGET" "$SCRIPTS")
 else
     # BinPAC target path
     if [[ -z "$TARGET" ]]; then
@@ -331,6 +327,16 @@ else
         TARGET="icsnpp/${repo_name}"
     fi
     ZEEK_MAIN_ARGS=("$TARGET")
+
+    # Verify that the BinPAC plugin has been built. We consider the build
+    # complete when two artefacts exist:
+    #   1) build/scripts/   – generated Zeek scripts produced at compile time
+    #   2) build/*.tgz      – the final packaged tarball produced by CMake
+    # If either is missing we assume the plugin has not yet been compiled.
+    BUILDDIR="$REPO_ROOT/build"
+    if [[ ! -L "$BUILDDIR/scripts" || -z "$(find "$BUILDDIR" -maxdepth 1 -name '*.tgz' -print -quit 2>/dev/null)" ]]; then
+        die "BinPAC plugin does not appear to be built yet (missing scripts/ symlink or .tgz artefact in build/). Run 'zr --build --pcap <file>' (or build manually) and try again."
+    fi
 fi
 
 # Resolve pcap file
