@@ -40,6 +40,7 @@ alias zrf='zr -f'
 alias zrb='zr --build'
 alias zrp='zr --pcap'
 alias zrl='zr -l'
+alias zc='zeek-config'
 
 # eza (modern ls replacement) --------------------------------------------------
 alias eza="eza --binary --color auto --group-directories-first --git --git-repos-no-status --hyperlink --icons auto --mounts --no-permissions --octal-permissions --time-style long-iso"
@@ -93,11 +94,14 @@ export WORK_ROOT="${WORK_ROOT:-$HOME/work}"
 export PARSERS_ROOT="${PARSERS_ROOT:-$WORK_ROOT/parsers}"
 export MACLOLM_ROOT="${MACLOLM_ROOT:-$WORK_ROOT/malcolm}"
 
+alias work='cd $WORK_ROOT'
+alias parsers='cd $PARSERS_ROOT'
 alias malc='cd $MACLOLM_ROOT'
+
 alias malcolm='malc'
 alias mal='malc'
+
 alias ics='cd $PARSERS_ROOT/icsnpp'
-alias parsers='cd $PARSERS_ROOT'
 alias parse='parsers'
 alias par='parsers'
 
@@ -107,8 +111,8 @@ alias roc='cd $PARSERS_ROOT/icsnpp-roc-plus'
 alias omr='cd $PARSERS_ROOT/icsnpp-omron-fins'
 alias c12='cd $PARSERS_ROOT/C12.22'
 
-alias dot='cd $DOTFILES_DIR'
-alias dotdot='dot' # overides /usr/bin/dot
+alias dot='cd $DOTFILES_DIR' # overides /usr/bin/dot
+alias dotdot='dot'
 alias dd='dotdot' # overides /usr/bin/dd
 
 # Editing helpers -------------------------------------------------------------
