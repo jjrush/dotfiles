@@ -253,7 +253,10 @@ if (( SHOW_PCAPS )); then
     exit 0
 fi
 
-[[ -z "$PCAP_PATTERN" ]] && die "--pcap is required."
+# Allow --build without --pcap to just build the directory
+if [[ -z "$PCAP_PATTERN" && $BUILD -eq 0 ]]; then
+    die "--pcap is required (unless using --build alone)."
+fi
 
 echo_err "Repository root detected: $REPO_ROOT"
 
@@ -337,6 +340,12 @@ else
     if [[ ! -L "$BUILDDIR/scripts" || -z "$(find "$BUILDDIR" -maxdepth 1 -name '*.tgz' -print -quit 2>/dev/null)" ]]; then
         die "BinPAC plugin does not appear to be built yet (missing scripts/ symlink or .tgz artefact in build/). Run 'zr --build --pcap <file>' (or build manually) and try again."
     fi
+fi
+
+# If only building (no pcap), exit after build
+if [[ -z "$PCAP_PATTERN" ]]; then
+    echo_err "Build complete. Exiting (no pcap specified)."
+    exit 0
 fi
 
 # Resolve pcap file

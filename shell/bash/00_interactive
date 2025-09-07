@@ -26,4 +26,7 @@ if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
     . /usr/share/bash-completion/bash_completion
   fi
-fi 
+fi
+
+# Seriously stop putting pycache folders everywhere
+export PYTHONDONTWRITEBYTECODE=1

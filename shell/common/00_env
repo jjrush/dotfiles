@@ -9,7 +9,7 @@ export DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 
 # Facts about the current host ------------------------------------------------
 export DOTFILES_OS="$(uname -s)"        # Darwin, Linux, …
-export DOTFILES_SH="${ZSH_VERSION:+zsh}${BASH_VERSION:+bash}"
+export DOTFILES_SH="bash"
 
 # PATH helpers ----------------------------------------------------------------
 add_path_front() {

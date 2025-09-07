@@ -4,11 +4,7 @@
 # -------------------------------------------------------------
 
 # Reload rc file quickly ------------------------------------------------------
-if [ "$DOTFILES_SH" = "bash" ]; then
-  alias src='source ~/.bashrc'
-else
-  alias src='source ~/.zshrc'
-fi
+alias src='source ~/.bashrc'
 
 # Safety ----------------------------------------------------------------------
 alias mv='mv -i'
@@ -24,7 +20,7 @@ alias uuu='cd ../../..'
 alias uuuu='cd ../../../..'
 alias uuuuu='cd ../../../../..'
 
-# System tools ----------------------------------------------------------------
+# System stuff ----------------------------------------------------------------
 alias fd='fdfind'
 alias ctl='systemctl'
 alias tidy='make clang-tidy'
@@ -32,8 +28,9 @@ alias fast='make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)'
 alias fastclean='make clean && fast'
 alias ja='ninja -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)'
 alias rml='rm *.log'
+alias ws='wireshark'
 
-# Custom tools ----------------------------------------------------------------
+# Zeek ------------------------------------------------------------------------
 alias zeek_run='zeek_runner'
 alias zr='zeek_run'
 alias zrf='zr -f'
@@ -61,10 +58,15 @@ alias lsize='esize'
 alias lld='eld'
 alias lsl='ls -l'
 alias lsla='ls -la'
+alias cat='bat'
 
 # grep / search ---------------------------------------------------------------
 alias grep='rg'   # use ripgrep everywhere
 alias ag='rg'
+
+# nix
+alias ns='nix-switch'
+alias nu='nix-update'
 
 # Git -------------------------------------------------------------------------
 alias clone='git clone'
@@ -77,8 +79,12 @@ alias gad='git add -u'
 alias gcm='git commit -m'
 
 # Code editor -----------------------------------------------------------------
-alias c='cursor_run'
+alias c='code'
+alias cur='cursor_run'
+alias cursor='cursor_run'
 alias scode='sudo code --no-sandbox --user-data-dir="~/.vscode-root"'
+
+alias z='zed'
 
 # Project helpers / UV --------------------------------------------------------
 alias python='uv run -- python3'
@@ -119,5 +125,6 @@ alias dd='dotdot' # overides /usr/bin/dd
 alias cenv='c "$DOTFILES_DIR/shell/common/00_env"'
 alias clias='c "$DOTFILES_DIR/shell/common/20_aliases_common"'
 alias cdock='c "$DOTFILES_DIR/shell/common/30_docker_aliases"'
+alias cfunc='c $DOTFILES_DIR/shell/common/40_functions'
 alias cbash='c "$DOTFILES_DIR/shell/bash/00_interactive"'
 alias czsh='c "$DOTFILES_DIR/shell/zsh/00_interactive"'

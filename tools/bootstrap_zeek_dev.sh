@@ -62,12 +62,4 @@ chmod +x "$WRAPPER"
 step "3. Symlink wrapper as ~/bin/zkg"
 ln -sf "$WRAPPER" "$BIN_DIR/zkg"
 
-##############################################################################
-step "4. Patch $SHELL_RC (idempotent)"
-append_if_missing "$SHELL_RC" 'export PATH="$HOME/bin:$PATH"'
-append_if_missing "$SHELL_RC" 'alias zkg="command zkg --user"'
-append_if_missing "$SHELL_RC" '[ -f "$HOME/.zkg/env.sh" ] && source "$HOME/.zkg/env.sh"'
-append_if_missing "$SHELL_RC" 'HISTSIZE=5000'
-append_if_missing "$SHELL_RC" 'HISTFILESIZE=20000'
-append_if_missing "$SHELL_RC" 'shopt -s histappend'
-app
+
