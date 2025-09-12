@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Auto-configure an "upstream" remote based on the current repo's origin.
+# Mapping rules:
+#   jjrush  -> parsitects
+#   parsitects -> cisagov
+# Skips if upstream already exists, or if origin is not on github.com.
+
+set -euo pipefail
+
+# Ensure we're inside a git repo
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
+
+# Skip if upstream already exists
+if git remote get-url upstream >/dev/null 2>&1; then
+  exit 0
+fi
+
+origin_url=$(git remote get-url origin 2>/dev/null || true)
+[ -n "$origin_url" ] || exit 0
+
+# Only handle GitHub-hosted repos
+case "$origin_url" in
+  git@github.com:*) scheme=ssh; tmp=${origin_url#git@github.com:} ;;
+  https://github.com/*) scheme=https; tmp=${origin_url#https://github.com/} ;;
+  ssh://git@github.com/*) scheme=ssh; tmp=${origin_url#ssh://git@github.com/} ;;
+  *) exit 0 ;;
+esac
+
+tmp=${tmp%.git}
+owner=${tmp%%/*}
+repo=${tmp#*/}
+
+case "$owner" in
+  jjrush)    target_owner="parsitects" ;;
+  parsitects) target_owner="cisagov"    ;;
+  *) exit 0 ;;
+esac
+
+case "$scheme" in
+  ssh)   target_url="git@github.com:${target_owner}/${repo}.git" ;;
+  https) target_url="https://github.com/${target_owner}/${repo}.git" ;;
+esac
+
+git remote add upstream "$target_url" 2>/dev/null || true
+exit 0
+

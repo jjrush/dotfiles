@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# 45_function_helpers – internal helpers used by other function files
+# ---------------------------------------------------------------------------
+
+# Internal: list immediate child directories that are Git repos
+_git_repos_in_dir() {
+    local dir="$1"
+    [ -n "$dir" ] || return 1
+    if [ -d "$dir" ]; then
+        dir="$(cd "$dir" 2>/dev/null && pwd)"
+    fi
+    for d in "$dir"/*; do
+        [ -d "$d" ] || continue
+        if [ -d "$d/.git" ] || git -C "$d" rev-parse --git-dir >/dev/null 2>&1; then
+            echo "$d"
+        fi
+    done
+}
+
+# Internal: build a GitHub URL for cloning
+_gh_url_for() {
+    # _gh_url_for scheme owner repo
+    local scheme="${1:-https}" owner="$2" repo="$3"
+    case "$scheme" in
+        ssh)   echo "git@github.com:${owner}/${repo}.git" ;;
+        https) echo "https://github.com/${owner}/${repo}.git" ;;
+        *)     echo "https://github.com/${owner}/${repo}.git" ;;
+    esac
+}
+
+# Internal: clone + set upstream + fetch
+__gh_clone() {
+    # __gh_clone <owner> <proto>
+    local owner="$1" proto="$2"
+    local repo="icsnpp-${proto}"
+    local scheme="${GH_CLONE_SCHEME:-https}"
+    local url
+    url=$(_gh_url_for "$scheme" "$owner" "$repo")
+
+    if [ -d "$repo" ]; then
+        # If it already exists, ensure it's a git repo and fetch; skip cloning
+        if git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            git_upstream_auto "$repo"
+            git -C "$repo" fetch --all --prune >/dev/null 2>&1 || true
+            if git -C "$repo" remote get-url upstream >/dev/null 2>&1; then
+                git -C "$repo" fetch upstream --prune >/dev/null 2>&1 || true
+            fi
+        else
+            echo "Warning: $repo exists but is not a git repo; skipping" 1>&2
+            return 1
+        fi
+    else
+        git clone "$url" || return $?
+        # Ensure upstream mapping and fetch remotes
+        git_upstream_auto "$repo"
+        git -C "$repo" fetch --all --prune >/dev/null 2>&1 || true
+        if git -C "$repo" remote get-url upstream >/dev/null 2>&1; then
+            git -C "$repo" fetch upstream --prune >/dev/null 2>&1 || true
+        fi
+    fi
+}
+
+# Internal: clone all protocols for an owner
+__gc_all() {
+    local owner="$1"
+    local p
+    for p in "${ICS_PROTOCOLS[@]}"; do
+        __gh_clone "$owner" "$p"
+    done
+}
+
+# Internal: compute shorthand from canonical protocol
+__proto_short_of() {
+    local proto="$1" short_base
+    if [[ "$proto" == *-plus ]]; then
+        short_base="${proto%-plus}"
+    else
+        short_base="${proto%%-*}"
+    fi
+    if [ "$proto" = "ge-srtp" ] || [ "$short_base" = "ge" ]; then
+        echo ge; return 0
+    fi
+    case "$short_base" in
+        enip|dnp3) echo "$short_base"; return 0 ;;
+    esac
+    if [ ${#short_base} -gt 4 ]; then
+        echo "${short_base:0:3}"
+    else
+        echo "$short_base"
+    fi
+}
+
+# Internal: resolve user input (short or canonical) to canonical protocol
+__proto_from_input() {
+    local input="$1"
+    for p in "${ICS_PROTOCOLS[@]}"; do
+        [ "$input" = "$p" ] && { echo "$p"; return 0; }
+    done
+    for p in "${ICS_PROTOCOLS[@]}"; do
+        if [ "$input" = "$(__proto_short_of "$p")" ]; then
+            echo "$p"; return 0
+        fi
+    done
+    echo "unknown"; return 1
+}
+
+# Internal: normalize owner/org input
+__owner_from_arg() {
+    local o
+    o=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
+    case "$o" in
+        ics|cis|cisagov)    echo "cisagov" ;;
+        par|pars|parsitects) echo "parsitects" ;;
+        jr|jj|jjrush)       echo "jjrush" ;;
+        *) echo "unknown" ; return 1 ;;
+    esac
+}

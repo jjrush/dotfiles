@@ -1,0 +1,26 @@
+[user]
+    name = jjrush
+    email = jjrush-github@proton.me
+
+[alias]
+    tree = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) %C(auto)%d%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)' --all
+    tree2 = "!f() { DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed \"s@^refs/remotes/origin/@@\"); git log --graph --abbrev-commit --decorate --format=format:\"%C(bold blue)%h%C(reset) %C(auto)%d%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)\" $DEFAULT_BRANCH HEAD; }; f"
+
+[credential]
+    helper = store
+
+[filter "lfs"]
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
+    clean = git-lfs clean -- %f
+
+[init]
+    templateDir = ~/.git_template
+
+[push]
+    autoSetupRemote = true
+
+[core]
+    hooksPath = ~/dotfiles/git/hooks
+

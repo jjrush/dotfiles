@@ -46,17 +46,26 @@ if ! command -v nix &> /dev/null; then
     
     # Source Nix for the current shell session
     . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-    
-    # Enable flakes
-    mkdir -p "$HOME/.config/nix"
-    echo "experimental-features = nix-command flakes" >> "$HOME/.config/nix/nix.conf"
 else
     info "Nix is already installed."
+fi
+
+# Ensure flakes are enabled (idempotent)
+mkdir -p "$HOME/.config/nix"
+if ! grep -Fxq "experimental-features = nix-command flakes" "$HOME/.config/nix/nix.conf" 2>/dev/null; then
+    echo "experimental-features = nix-command flakes" >> "$HOME/.config/nix/nix.conf"
+    info "Enabled nix flakes in ~/.config/nix/nix.conf"
+else
+    info "Nix flakes already enabled"
 fi
 
 # 3. Link custom tools into ~/bin
 step "Linking custom tools..."
 bash "$DOTFILES_DIR/bootstrap/link_tools.sh"
+
+# 3b. Configure Git (idempotent)
+step "Configuring Git (global) via dotfiles include…"
+bash "$DOTFILES_DIR/bootstrap/configure_git.sh"
 
 # 4. Apply Nix Configuration
 step "Applying Nix configuration from $NIX_CONFIG_DIR..."

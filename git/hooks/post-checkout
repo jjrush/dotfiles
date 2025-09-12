@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Centralized post-checkout hook (used via core.hooksPath)
+# Purpose: if an "upstream" remote is missing, add it based on origin owner.
+
+set -euo pipefail
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+MAP_SCRIPT="$HOOK_DIR/../bin/upstream-map"
+if [ -x "$MAP_SCRIPT" ]; then
+  "$MAP_SCRIPT" || true
+elif [ -r "$MAP_SCRIPT" ]; then
+  bash "$MAP_SCRIPT" || true
+fi
+
+# After ensuring upstream exists (if applicable), fetch remotes so all branches
+# are available locally. This is safe and fast if already up-to-date.
+git fetch --all --prune >/dev/null 2>&1 || true
+if git remote get-url upstream >/dev/null 2>&1; then
+  git fetch upstream --prune >/dev/null 2>&1 || true
+fi
+
+exit 0

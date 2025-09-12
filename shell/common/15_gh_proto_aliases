@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+export GH_ICS_BASE='https://github.com/cisagov/'
+export GH_PAR_BASE='https://github.com/parsitects'
+export GH_JJR_BASE='https://github.com/jjrush'
+
+# Define the protocols list
+export ICS_PROTOCOLS=(
+    "omron-fins"
+    "roc-plus"
+    "hart-ip"
+    "modbus"
+    "c1222"
+    "enip"
+    "ge-srtp"
+    "s7comm"
+    "bacnet"
+    "genisys"
+    "opcua-binary"
+    "profinet-io-cm"
+    "synchrophasor"
+    "ethercat"
+    "dnp3"
+    "bsap"
+)
+
+# Streamlined per-protocol clone aliases (shorthand-only) that perform the
+# clone and upstream setup. Examples:
+#   gc-ics-roc  -> cisagov/icsnpp-roc-plus
+#   gc-par-roc  -> parsitects/icsnpp-roc-plus (upstream=cisagov)
+#   gc-jr-roc   -> jjrush/icsnpp-roc-plus (upstream=parsitects)
+for proto in "${ICS_PROTOCOLS[@]}"; do
+  # derive shorthand name
+  short_base="$proto"
+  if [[ "$proto" == *-plus ]]; then
+    short_base="${proto%-plus}"
+  else
+    short_base="${proto%%-*}"
+  fi
+
+  # explicit special-cases
+  if [ "$proto" = "ge-srtp" ] || [ "$short_base" = "ge" ]; then
+    short="ge"
+  else
+    case "$short_base" in
+      enip|dnp3)
+        short="$short_base" ;;
+      *)
+        if [ ${#short_base} -gt 4 ]; then
+          short="${short_base:0:3}"
+        else
+          short="$short_base"
+        fi ;;
+    esac
+  fi
+
+  # Always create only the shorthand alias versions
+  alias gc-ics-${short}="__gh_clone cisagov ${proto}"
+  alias gc-par-${short}="__gh_clone parsitects ${proto}"
+  alias gc-jr-${short}="__gh_clone jjrush ${proto}"
+done
+
+# Convenience: clone all for each org
+alias gc-ics-all='__gc_all cisagov'
+alias gc-par-all='__gc_all parsitects'
+alias gc-jr-all='__gc_all jjrush'

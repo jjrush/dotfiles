@@ -97,21 +97,26 @@ alias uvclean='rm -rf .venv && uv venv'
 
 # Work shortcuts --------------------------------------------------------------
 export WORK_ROOT="${WORK_ROOT:-$HOME/work}"
+
 export PARSERS_ROOT="${PARSERS_ROOT:-$WORK_ROOT/parsers}"
+export ICSNPP_ROOT="${ICSNPP_ROOT:-$PARSERS_ROOT/icsnpp}"
+export JJRUSH_ROOT="${JJRUSH_ROOT:-$PARSERS_ROOT/jjrush}"
+export PARSITECTS_ROOT="${PARSITECTS_ROOT:-$PARSERS_ROOT/parsitects}"
+
 export MACLOLM_ROOT="${MACLOLM_ROOT:-$WORK_ROOT/malcolm}"
 
 alias work='cd $WORK_ROOT'
 alias parsers='cd $PARSERS_ROOT'
-alias malc='cd $MACLOLM_ROOT'
+alias malcolm='cd $MACLOLM_ROOT'
 
-alias malcolm='malc'
+alias malc='malcolm'
 alias mal='malc'
 
-alias ics='cd $PARSERS_ROOT/icsnpp'
+alias ics='cd $ICSNPP_ROOT'
 alias parse='parsers'
 alias par='parsers'
 
-# Repositories ---------------------------------------------------------------
+# Local Repositories ---------------------------------------------------------------
 alias opc='cd $PARSERS_ROOT/icsnpp-opcua-binary'
 alias roc='cd $PARSERS_ROOT/icsnpp-roc-plus'
 alias omr='cd $PARSERS_ROOT/icsnpp-omron-fins'

@@ -3,6 +3,11 @@
 # 40_functions – functions that work in BOTH bash and zsh
 # ---------------------------------------------------------------------------
 
+# Load internal helpers (if available)
+if [ -f "$DOTFILES_DIR/shell/common/45_function_helpers" ]; then
+    . "$DOTFILES_DIR/shell/common/45_function_helpers"
+fi
+
 cursor_run() {
     local path="$1"
     if [[ "$path" == "." ]]; then
@@ -16,3 +21,155 @@ cursor_run() {
     fi
 }
 
+# ----------------------------------------------------------------------------
+# Git – multi-repo helpers
+# ----------------------------------------------------------------------------
+
+# git_each DIR [git args...]
+#   Runs the provided git command in each repo directly under DIR.
+#   Example: git_each "$PARSITECTS_ROOT" status -sb
+git_each() {
+    local dir="$1"
+    shift || true
+    if [ -z "$dir" ]; then
+        echo "usage: git_each <dir> [git args…]" 1>&2
+        return 2
+    fi
+    local any=0
+    while IFS= read -r repo; do
+        any=1
+        printf "\n== %s ==\n" "${repo##*/}"
+        git -C "$repo" "$@"
+    done < <(_git_repos_in_dir "$dir")
+    [ "$any" = 1 ] || echo "(no git repos found in: $dir)"
+}
+
+# git_dirty DIR [limit]
+#   Lists repos under DIR with uncommitted changes and shows up to [limit]
+#   changed paths (default: 5). Uses porcelain for predictable parsing.
+#   Example: git_dirty "$PARSITECTS_ROOT" 5
+git_dirty() {
+    local dir="$1"; shift || true
+    local limit="${1:-5}"
+    if [ -z "$dir" ]; then
+        echo "usage: git_dirty <dir> [max_files]" 1>&2
+        return 2
+    fi
+    local any_dirty=0
+    while IFS= read -r repo; do
+        # Collect porcelain status
+        local status
+        status="$(git -C "$repo" status --porcelain 2>/dev/null)"
+        if [ -n "$status" ]; then
+            any_dirty=1
+            local repo_name="${repo##*/}"
+            echo "${repo_name}:"
+
+            # Show up to $limit paths; strip the XY status and a space (first 3 chars)
+            # Note: rename lines will show "old -> new" as a single entry.
+            echo "$status" \
+              | sed 's/^...//' \
+              | head -n "$limit"
+
+            # If there are more than limit entries, show a short tail note
+            local total
+            total=$(echo "$status" | wc -l | tr -d ' ')
+            if [ "$total" -gt "$limit" ]; then
+                echo "  … and $((total - limit)) more"
+            fi
+            echo
+        fi
+    done < <(_git_repos_in_dir "$dir")
+
+    if [ "$any_dirty" = 0 ]; then
+        echo "All repos clean under: $dir"
+    fi
+}
+
+# Convenience wrappers using common roots if set
+#   Examples:
+#     par_dirty        # uses $PARSITECTS_ROOT
+#     ics_dirty 10     # show up to 10 files
+#     jj_each status   # run arbitrary git command across jjrush repos
+
+par_dirty() { git_dirty "${PARSITECTS_ROOT:-$HOME/work/parsers/parsitects}" "$@"; }
+ics_dirty() { git_dirty "${ICSNPP_ROOT:-$HOME/work/parsers/icsnpp}" "$@"; }
+jj_dirty()  { git_dirty "${JJRUSH_ROOT:-$HOME/work/parsers/jjrush}" "$@"; }
+
+par_each() { local cmd=("$@"); git_each "${PARSITECTS_ROOT:-$HOME/work/parsers/parsitects}" "${cmd[@]}"; }
+ics_each() { local cmd=("$@"); git_each "${ICSNPP_ROOT:-$HOME/work/parsers/icsnpp}"     "${cmd[@]}"; }
+jj_each()  { local cmd=("$@"); git_each "${JJRUSH_ROOT:-$HOME/work/parsers/jjrush}"       "${cmd[@]}"; }
+
+# ----------------------------------------------------------------------------
+# Git – upstream helpers
+# ----------------------------------------------------------------------------
+
+# git_upstream_auto [repo_dir]
+#   Adds an "upstream" remote based on origin owner:
+#     jjrush -> parsitects, parsitects -> cisagov
+#   If [repo_dir] omitted, uses CWD. Safe to re-run; no-op if upstream exists.
+git_upstream_auto() {
+    local repo_dir="${1:-.}"
+    local script="$DOTFILES_DIR/git/bin/upstream-map"
+    if [ -x "$script" ]; then
+        ( cd "$repo_dir" && "$script" )
+    elif [ -r "$script" ]; then
+        ( cd "$repo_dir" && bash "$script" )
+    else
+        echo "upstream helper not found: $script" 1>&2
+        return 1
+    fi
+}
+
+# Enable/disable centralized hooks from this dotfiles repo.
+# Uses global core.hooksPath so every repo uses these hooks.
+git_hooks_enable()  { git config --global core.hooksPath "$DOTFILES_DIR/git/hooks"; }
+git_hooks_disable() { git config --global --unset core.hooksPath 2>/dev/null || true; }
+
+# ----------------------------------------------------------------------------
+# Git – concise gc <org> <proto> helper
+# ----------------------------------------------------------------------------
+
+gc() {
+    if [ $# -lt 2 ]; then
+        echo "usage: gc <ics|par|jr> <proto>" 1>&2
+        return 2
+    fi
+    local owner proto_in proto
+    owner="$(__owner_from_arg "$1")" || { echo "unknown org: $1" 1>&2; return 2; }
+    proto_in="$2"
+    case "${proto_in,,}" in
+        all)
+            __gc_all "$owner" ;;
+        *)
+            proto="$(__proto_from_input "$proto_in")" || { echo "unknown protocol: $2" 1>&2; return 2; }
+            __gh_clone "$owner" "$proto" ;;
+    esac
+}
+
+# ----------------------------------------------------------------------------
+# Git – manage ~/.gitconfig includes
+# ----------------------------------------------------------------------------
+
+git_config_enable() {
+    local cfg="$DOTFILES_DIR/git/config/main.gitconfig"
+    if [ ! -f "$cfg" ]; then
+        echo "dotfiles git config not found: $cfg" 1>&2
+        return 1
+    fi
+    if git config --global --get-all include.path 2>/dev/null | grep -Fxq "$cfg"; then
+        echo "Already included: $cfg"
+    else
+        git config --global --add include.path "$cfg"
+        echo "Included: $cfg in ~/.gitconfig"
+    fi
+}
+
+git_config_disable() {
+    local cfg="$DOTFILES_DIR/git/config/main.gitconfig"
+    # Remove all matching include.path entries equal to our path
+    while git config --global --get-regexp '^include\.path$' | awk '{print $2}' | grep -Fxq "$cfg"; do
+        git config --global --unset include.path "$cfg" || break
+    done 2>/dev/null || true
+    echo "Removed include for: $cfg from ~/.gitconfig (if present)"
+}
