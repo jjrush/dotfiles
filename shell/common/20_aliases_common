@@ -80,8 +80,6 @@ alias gcm='git commit -m'
 
 # Code editor -----------------------------------------------------------------
 alias c='code'
-alias cur='cursor_run'
-alias cursor='cursor_run'
 alias scode='sudo code --no-sandbox --user-data-dir="~/.vscode-root"'
 
 alias z='zed'
@@ -116,6 +114,10 @@ alias ics='cd $ICSNPP_ROOT'
 alias parse='parsers'
 alias par='parsers'
 
+# Other repo shortcuts
+alias spud='cd ~/research/spuddy/'
+alias spuddy='spud'
+
 # Local Repositories ---------------------------------------------------------------
 alias opc='cd $PARSERS_ROOT/icsnpp-opcua-binary'
 alias roc='cd $PARSERS_ROOT/icsnpp-roc-plus'
@@ -133,3 +135,8 @@ alias cdock='c "$DOTFILES_DIR/shell/common/30_docker_aliases"'
 alias cfunc='c $DOTFILES_DIR/shell/common/40_functions'
 alias cbash='c "$DOTFILES_DIR/shell/bash/00_interactive"'
 alias czsh='c "$DOTFILES_DIR/shell/zsh/00_interactive"'
+
+# Tool updaters + launchers ---------------------------------------------------
+alias codex='codex_update_and_run'
+alias claude='claude_update_and_run'
+alias gemini='gemini_update_and_run'

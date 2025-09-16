@@ -8,17 +8,20 @@ if [ -f "$DOTFILES_DIR/shell/common/45_function_helpers" ]; then
     . "$DOTFILES_DIR/shell/common/45_function_helpers"
 fi
 
-cursor_run() {
-    local path="$1"
-    if [[ "$path" == "." ]]; then
-        path="$(pwd)"
-    fi
-    { output=$(/home/rush/bin/cursor "$path") & } > /dev/null 2>&1
-    if [[ $? -eq 0 ]]; then
-        echo "Cursor starting..."
-    else
-        echo "Cursor failed to start"
-    fi
+# ---------------------------------------------------------------------------
+# Developer tool launchers with self-update
+# ---------------------------------------------------------------------------
+
+codex_update_and_run() {
+    sudo npm install -g @openai/codex && command codex "$@"
+}
+
+claude_update_and_run() {
+    sudo npm i -g @anthropic-ai/claude-code && command claude "$@"
+}
+
+gemini_update_and_run() {
+    sudo npm update -g @google/gemini-cli && command gemini "$@"
 }
 
 # ----------------------------------------------------------------------------
