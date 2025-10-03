@@ -32,7 +32,7 @@ Usage:
 
 Flags:
   --build           Build (cmake && make) before running
-  --list,  -l       List available parser directories ($WORK_ROOT/parsers)
+  --list,  -l       List available parser directories ($WORK_ROOT/parsers/parsitects/)
   --find,  -f       List pcaps under the current repository with indices
   --pcap <pat|idx>  Required pattern or numeric index identifying a pcap
   --target <str>    Override BinPAC target (icsnpp/<name>)
@@ -105,7 +105,7 @@ find_repo_root() {
     local last=""
     while [[ "$dir" != "$last" ]]; do
         [[ -f "$dir/CMakeLists.txt" ]] && { echo "$dir"; return; }
-        [[ "$dir" == "$WORK_ROOT/parsers" ]] && { echo "$dir"; return; }
+        [[ "$dir" == "$WORK_ROOT/parsers/parsitects" ]] && { echo "$dir"; return; }
         last="$dir"; dir="$(dirname "$dir")"
     done
     die "Failed to locate repository root (CMakeLists.txt not found)."
@@ -161,7 +161,7 @@ gather_pcaps() {
 # Pretty listing helpers -------------------------------------------------------
 
 list_parsers() {
-    local base="${WORK_ROOT}/parsers"
+    local base="${WORK_ROOT}/parsers/parsitects"
     [[ -d "$base" ]] || die "Directory $base does not exist."
     echo -e "${GREEN}Available parsers in $base:${NC}"
     for dir in "$base"/*; do
@@ -246,7 +246,7 @@ REPO_ROOT="$(find_repo_root "$(pwd)")"
 
 # Validate location: ensure inside $WORK_ROOT/parsers
 [[ "${REPO_ROOT}" != ${WORK_ROOT}/parsers/* ]] && \
-    die "Repository root '$REPO_ROOT' is not inside ${WORK_ROOT}/parsers."
+    die "Repository root '$REPO_ROOT' is not inside ${WORK_ROOT}/parsers/parsitects."
 
 if (( SHOW_PCAPS )); then
     find_pcaps_in_dir "$REPO_ROOT"

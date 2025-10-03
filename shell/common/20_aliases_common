@@ -21,7 +21,7 @@ alias uuuu='cd ../../../..'
 alias uuuuu='cd ../../../../..'
 
 # System stuff ----------------------------------------------------------------
-alias fd='fdfind'
+# alias fd='fdfind' # causing issues with nix-installed fd
 alias ctl='systemctl'
 alias tidy='make clang-tidy'
 alias fast='make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)'
@@ -58,6 +58,7 @@ alias lsize='esize'
 alias lld='eld'
 alias lsl='ls -l'
 alias lsla='ls -la'
+alias bat='batcat'
 alias cat='bat'
 
 # grep / search ---------------------------------------------------------------
@@ -81,8 +82,7 @@ alias gcm='git commit -m'
 # Code editor -----------------------------------------------------------------
 alias c='code'
 alias scode='sudo code --no-sandbox --user-data-dir="~/.vscode-root"'
-
-alias z='zed'
+# alias z='zed'
 
 # Project helpers / UV --------------------------------------------------------
 alias python='uv run -- python3'
@@ -134,9 +134,12 @@ alias clias='c "$DOTFILES_DIR/shell/common/20_aliases_common"'
 alias cdock='c "$DOTFILES_DIR/shell/common/30_docker_aliases"'
 alias cfunc='c $DOTFILES_DIR/shell/common/40_functions'
 alias cbash='c "$DOTFILES_DIR/shell/bash/00_interactive"'
-alias czsh='c "$DOTFILES_DIR/shell/zsh/00_interactive"'
+
+# Tool aliases
+alias cl='bash $DOTFILES_DIR/tools/countlines.sh'
 
 # Tool updaters + launchers ---------------------------------------------------
 alias codex='codex_update_and_run'
+alias cdx='codex'
 alias claude='claude_update_and_run'
 alias gemini='gemini_update_and_run'
