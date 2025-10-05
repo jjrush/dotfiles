@@ -1,0 +1,18 @@
+# Shell shim files (these belong in ~, not in the repo)
+.bash_profile
+.bashrc
+.zshrc
+.zprofile
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files created by bootstrap scripts
+*.pre-dotfiles.*

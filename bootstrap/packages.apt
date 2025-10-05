@@ -1,34 +1,16 @@
-build-essential
-ca-certificates
-ccache
-cmake
-code
-curl
-direnv
-docker-desktop
-eza
+# Core CLI utilities (used by dotfiles aliases)
 fd-find
-flatpak
-fzf
-g++
-gdb
-gcc
-git
-github-desktop
-ghostty
-google-chrome-stable
-htop
-jq
-make
-ncdu
-neovim
-pkg-config
-python3
-python3-pip
-python3-venv
+bat
+eza
 ripgrep
-tmux
-tree
-unzip
+
+# Development tools
+gh
+jq
+git
+curl
 wget
-zip
+
+# Build essentials (commonly needed)
+build-essential
+cmake

@@ -3,6 +3,11 @@
 # 30_docker_aliases – Docker & docker-compose helpers for all shells
 # -------------------------------------------------------------
 
+# Only set docker aliases if docker is installed
+if ! command -v docker >/dev/null 2>&1; then
+  return 0
+fi
+
 ### ───────────────────────────── Generics ──────────────────────────────── ###
 alias dps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
 alias dim='docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"'

@@ -22,17 +22,20 @@ else
   mkdir -p "$TARGET_DIR"
 fi
 
-# Map of link-name → source-script
-declare -A LINKS=(
-  [trim]="remove_trailing_whitespace.sh"
-  [zeek_runner]="zeek_runner.sh"
-  [zkg]="zkg_wrapper.sh"
-  [check]="check-env.sh"
+# Map of link-name:source-script (bash 3.2 compatible)
+# Format: "link_name:source_script.sh"
+LINKS=(
+  "trim:remove_trailing_whitespace.sh"
+  "zeek_runner:zeek_runner.sh"
+  "check:check-env.sh"
 )
 
-for link in "${!LINKS[@]}"; do
-  src="$TOOLS_DIR/${LINKS[$link]}"
+for mapping in "${LINKS[@]}"; do
+  link="${mapping%%:*}"
+  source_file="${mapping#*:}"
+  src="$TOOLS_DIR/$source_file"
   dest="$TARGET_DIR/$link"
+
   if [[ ! -f "$src" ]]; then
     echo "Warning: source $src not found, skipping $link" >&2
     continue

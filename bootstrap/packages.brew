@@ -1,4 +1,9 @@
-# Add your Homebrew packages here, one per line.
-# Example:
-# wget
-# htop
+# Core CLI utilities (used by dotfiles aliases)
+fd
+bat
+eza
+ripgrep
+
+# Development tools
+gh
+jq

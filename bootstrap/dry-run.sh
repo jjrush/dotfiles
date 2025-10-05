@@ -16,11 +16,11 @@ case "$(uname -s)" in
   Linux)
     if command -v apt-get >/dev/null 2>&1; then
       # Compute difference desired − installed using one dpkg-query call
-      mapfile -t missing < <(comm -23 \
+      missing=$(comm -23 \
         <(grep -v '^\s*$' "$DOTFILES_DIR/bootstrap/packages.apt" | sort -u) \
         <(dpkg-query -W -f='${Package}\n' 2>/dev/null | sort -u))
-      if [ ${#missing[@]} -gt 0 ]; then
-        printf "Would install (apt): %s\n" "${missing[*]}"
+      if [ -n "$missing" ]; then
+        printf "Would install (apt):\n%s\n" "$missing"
       else
         echo "All listed apt packages appear installed."
       fi
@@ -30,11 +30,11 @@ case "$(uname -s)" in
     ;;
   Darwin)
     if command -v brew >/dev/null 2>&1; then
-      mapfile -t missing < <(comm -23 \
+      missing=$(comm -23 \
         <(grep -v '^\s*$' "$DOTFILES_DIR/bootstrap/packages.brew" | sort -u) \
         <(brew list --formula | sort -u))
-      if [ ${#missing[@]} -gt 0 ]; then
-        printf "Would install (brew): %s\n" "${missing[*]}"
+      if [ -n "$missing" ]; then
+        printf "Would install (brew):\n%s\n" "$missing"
       else
         echo "All listed brew packages appear installed."
       fi
@@ -47,25 +47,11 @@ case "$(uname -s)" in
     ;;
 esac
 
-# 2) Nix install + flakes
-section "Nix + flakes"
-if command -v nix >/dev/null 2>&1; then
-  echo "nix is installed."
-else
-  echo "Would install nix (not installed)."
-fi
-mkdir -p "$HOME/.config/nix" >/dev/null 2>&1 || true
-if grep -Fxq "experimental-features = nix-command flakes" "$HOME/.config/nix/nix.conf" 2>/dev/null; then
-  echo "Flakes already enabled."
-else
-  echo "Would enable flakes in ~/.config/nix/nix.conf"
-fi
-
-# 3) Tool links
+# 2) Tool links
 section "Tool links"
 DRY_RUN=1 bash "$DOTFILES_DIR/bootstrap/link_tools.sh"
 
-# 4) Git include + template dir
+# 3) Git include + template dir
 section "Git config include"
 CFG="$DOTFILES_DIR/git/config/main.gitconfig"
 if git config --global --get-all include.path 2>/dev/null | grep -Fxq "$CFG"; then
@@ -79,4 +65,32 @@ else
   echo "Would create template dir: $HOME/.git_template"
 fi
 
-echo "\n==> Dry-run complete. No changes were made."
+# 4) Bash profile setup
+section "Bash profile"
+if [ -f "$HOME/.bash_profile" ]; then
+  if grep -q "DOTFILES_DIR.*dotfiles" "$HOME/.bash_profile" 2>/dev/null && \
+     grep -q "shell/bash/bash_profile" "$HOME/.bash_profile" 2>/dev/null; then
+    echo "Bash profile already configured to source from dotfiles"
+  else
+    echo "Would update $HOME/.bash_profile to source from dotfiles"
+  fi
+else
+  echo "Would create $HOME/.bash_profile"
+fi
+
+# Check for old shell configs that should be cleaned up
+section "Shell cleanup check"
+OLD_FILES=("$HOME/.zprofile" "$HOME/.zsh_aliases" "$HOME/.local/bin/env")
+FOUND_OLD=0
+for f in "${OLD_FILES[@]}"; do
+  if [ -e "$f" ]; then
+    echo "Found old file that should be cleaned: $f"
+    FOUND_OLD=1
+  fi
+done
+if [ $FOUND_OLD -eq 0 ]; then
+  echo "No old shell configs found (clean)"
+fi
+
+echo ""
+echo "==> Dry-run complete. No changes were made."

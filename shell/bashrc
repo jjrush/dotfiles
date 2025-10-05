@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# bashrc – Main bash configuration loader
+# ---------------------------------------------------------------------------
+# This file sources all shell configuration from dotfiles/shell/
+# Files are sourced in numerical order (00_*, 10_*, 20_*, etc.)
+
+# Determine dotfiles directory
+export DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
+
+# Source all shell configuration files in order
+for f in "$DOTFILES_DIR"/shell/[0-9]*; do
+  [ -r "$f" ] && . "$f"
+done
+
+# Report missing tools (for interactive shells only)
+if [[ $- == *i* ]]; then
+  if declare -f report_missing_tools >/dev/null 2>&1; then
+    report_missing_tools
+  fi
+fi

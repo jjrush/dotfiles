@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------
+# 20_aliases_common – aliases that work in BOTH bash and zsh
+# -------------------------------------------------------------
+
+# Reload rc file quickly ------------------------------------------------------
+# Smart sourcing: detects shell and sources the correct profile
+if [ -n "$BASH_VERSION" ]; then
+  alias src='source ~/.bash_profile'
+elif [ -n "$ZSH_VERSION" ]; then
+  alias src='source ~/.zshrc'
+fi
+
+# Safety (always set - these are just making commands safer) -----------------
+alias mv='mv -i'
+alias rm='rm -I -v'
+alias cp='cp -i'
+alias chmod='chmod --preserve-root'
+alias chown='chown --preserve-root'
+
+# Navigation (safe - no conflicts) --------------------------------------------
+alias u='cd ..'
+alias uu='cd ../..'
+alias uuu='cd ../../..'
+alias uuuu='cd ../../../..'
+alias uuuuu='cd ../../../../..'
+
+# System stuff ----------------------------------------------------------------
+safe_alias tidy 'make clang-tidy' make
+alias fast='make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)'
+alias fastclean='make clean && fast'
+alias rml='rm *.log'
+
+# Zeek (only if zeek_runner exists) -------------------------------------------
+if command -v zeek_runner >/dev/null 2>&1; then
+  alias zeek_run='zeek_runner'
+  alias zr='zeek_run'
+  alias zrf='zr -f'
+  alias zrb='zr --build'
+  alias zrp='zr --pcap'
+  alias zrl='zr -l'
+fi
+
+# eza (modern ls replacement) - only if installed -----------------------------
+if command -v eza >/dev/null 2>&1; then
+  # Configure eza with our preferred options
+  alias eza="eza --binary --color auto --group-directories-first --git --git-repos-no-status --hyperlink --icons auto --mounts --no-permissions --octal-permissions --time-style long-iso"
+
+  # Replace ls with eza (allowed shadow)
+  alias ls='eza'
+  alias e="eza --all --long"
+  alias ea="eza --all"
+  alias el="eza --long"
+  alias eld="eza --all --long --only-dirs --sort name"
+  alias esize="eza --long --sort size"
+  alias et="eza --long --sort modified"
+  alias etree="eza --tree"
+  alias la='ea'
+  alias lsa='ea'
+  alias l='e'
+  alias ll='el'
+  alias lt='et'
+  alias lsize='esize'
+  alias lld='eld'
+  alias lsl='ls -l'
+  alias lsla='ls -la'
+else
+  # Fallback to regular ls
+  alias la='ls -A'
+  alias l='ls -lh'
+  alias ll='ls -lh'
+fi
+
+# bat (better cat) - handle both 'bat' and 'batcat' naming --------------------
+if command -v bat >/dev/null 2>&1; then
+  alias cat='bat'
+elif command -v batcat >/dev/null 2>&1; then
+  alias bat='batcat'
+  alias cat='batcat'
+fi
+
+# ripgrep (better grep) -------------------------------------------------------
+if command -v rg >/dev/null 2>&1; then
+  alias grep='rg'
+  alias ag='rg'
+fi
+
+# fd (better find) ------------------------------------------------------------
+# Note: On some systems it's 'fdfind', on others 'fd'
+if command -v fd >/dev/null 2>&1; then
+  : # fd exists, good
+elif command -v fdfind >/dev/null 2>&1; then
+  alias fd='fdfind'
+fi
+
+# Git (safe - just shortcuts) -------------------------------------------------
+safe_alias clone 'git clone' git
+safe_alias pull 'git pull' git
+safe_alias gs 'git status' git
+safe_alias gd 'git diff' git
+safe_alias gb 'git branch' git
+safe_alias gaa 'git add -A' git
+safe_alias gad 'git add -u' git
+safe_alias gcm 'git commit -m' git
+
+# Code editor -----------------------------------------------------------------
+safe_alias c 'code' code
+safe_alias scode 'sudo code --no-sandbox --user-data-dir="~/.vscode-root"' code
+
+# Project helpers / UV --------------------------------------------------------
+if command -v uv >/dev/null 2>&1; then
+  alias python='uv run -- python3'
+  alias python3='uv run -- python3'
+  alias pip='uv pip'
+  alias pipx='uv tool'
+  alias uvp='uv pip'
+  alias uvs='uv sync'
+  alias uvclean='rm -rf .venv && uv venv'
+fi
+
+# Work shortcuts (safe - just navigation) -------------------------------------
+export WORK_ROOT="${WORK_ROOT:-$HOME/work}"
+export PARSERS_ROOT="${PARSERS_ROOT:-$WORK_ROOT/parsers}"
+export ICSNPP_ROOT="${ICSNPP_ROOT:-$PARSERS_ROOT/icsnpp}"
+export JJRUSH_ROOT="${JJRUSH_ROOT:-$PARSERS_ROOT/jjrush}"
+export PARSITECTS_ROOT="${PARSITECTS_ROOT:-$PARSERS_ROOT/parsitects}"
+export MACLOLM_ROOT="${MACLOLM_ROOT:-$WORK_ROOT/malcolm}"
+
+alias work='cd $WORK_ROOT'
+alias parsers='cd $PARSERS_ROOT'
+alias malcolm='cd $MACLOLM_ROOT'
+alias malc='malcolm'
+alias mal='malc'
+alias ics='cd $ICSNPP_ROOT'
+alias parse='parsers'
+alias par='parsers'
+
+# Other repo shortcuts
+alias spud='cd ~/research/spuddy/'
+alias spuddy='spud'
+
+# Local Repositories ----------------------------------------------------------
+alias opc='cd $PARSERS_ROOT/icsnpp-opcua-binary'
+alias roc='cd $PARSERS_ROOT/icsnpp-roc-plus'
+alias omr='cd $PARSERS_ROOT/icsnpp-omron-fins'
+alias c12='cd $PARSERS_ROOT/C12.22'
+
+# Note: 'dot' shadows /usr/bin/dot (graphviz) but we use it for dotfiles
+alias dot='cd $DOTFILES_DIR'
+alias dotdot='dot'
+# Note: 'dd' shadows /usr/bin/dd (disk utility) - consider renaming
+alias dd='dotdot'
+
+# Editing helpers -------------------------------------------------------------
+safe_alias cenv 'c "$DOTFILES_DIR/shell/common/00_env"' code
+safe_alias clias 'c "$DOTFILES_DIR/shell/common/20_aliases_common"' code
+safe_alias cdock 'c "$DOTFILES_DIR/shell/common/30_docker_aliases"' code
+safe_alias cfunc 'c $DOTFILES_DIR/shell/common/40_functions' code
+safe_alias cbash 'c "$DOTFILES_DIR/shell/bash/00_interactive"' code
+
+# Tool aliases (from ~/bin) ---------------------------------------------------
+if command -v countlines >/dev/null 2>&1; then
+  alias cl='countlines'
+elif [ -x "$DOTFILES_DIR/tools/countlines.sh" ]; then
+  alias cl='bash $DOTFILES_DIR/tools/countlines.sh'
+fi
+
+# Tool updaters + launchers (only if functions exist) ------------------------
+# These require functions defined in 40_functions
+if declare -f codex_update_and_run >/dev/null 2>&1; then
+  alias codex='codex_update_and_run'
+  alias cdx='codex'
+fi
+if declare -f claude_update_and_run >/dev/null 2>&1; then
+  alias claude='claude_update_and_run'
+fi
+if declare -f gemini_update_and_run >/dev/null 2>&1; then
+  alias gemini='gemini_update_and_run'
+fi
